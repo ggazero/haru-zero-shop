@@ -1,6 +1,6 @@
 :root{
-  --ink:#1d1b17; --sub:#6f675c; --line:#e3ddd2; --bg:#faf7f1; --card:#fff;
-  --accent:#8a5a2b; --accent-ink:#fff;
+  --ink:#2b2d25; --sub:#6d7164; --line:#deddd0; --bg:#f4f0e6; --card:#fffdf8;
+  --accent:#788268; --accent-ink:#fff;
   --max:1040px;
 }
 *{box-sizing:border-box}
@@ -21,7 +21,7 @@ nav.site a:hover{color:var(--ink)}
 .cart-count{background:var(--accent);color:var(--accent-ink);border-radius:999px;
   padding:1px 8px;font-size:12px;margin-left:4px}
 
-.hero{padding:56px 0 40px;border-bottom:1px solid var(--line)}
+.hero{padding:56px 0 40px;background:#e9e6d9;border-bottom:1px solid var(--line)}
 .hero h1{margin:0 0 10px;font-size:32px;letter-spacing:-.02em}
 .hero p{margin:0;color:var(--sub);font-size:16px}
 
@@ -29,9 +29,9 @@ main{padding:40px 0 80px}
 h2{font-size:22px;margin:0 0 18px;letter-spacing:-.01em}
 .lead{color:var(--sub);margin:0 0 28px}
 
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:20px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;
-  padding:22px;text-decoration:none;display:block;transition:.15s}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:26px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:22px;text-decoration:none;display:block;transition:.15s;box-shadow:0 3px 12px rgba(72,76,59,.06)}
 .card:hover{border-color:var(--accent);transform:translateY(-2px)}
 .card .thumb{font-size:44px;line-height:1;margin-bottom:14px}
 .card h3{margin:0 0 6px;font-size:16px}
