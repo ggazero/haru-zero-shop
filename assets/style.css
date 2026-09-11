@@ -73,3 +73,140 @@ footer.site{border-top:1px solid var(--line);padding:30px 0;color:var(--sub);fon
   .hero{padding:36px 0 28px}
   .hero h1{font-size:26px}
 }
+
+/* 잎사귀점: 기존 기능 선택자를 유지하는 공통 디자인 */
+:root{
+  --ink:#3e3428;--sub:#68634f;--line:#cbbb9e;--bg:#f6f0e3;
+  --card:#fffbef;--accent:#465c39;--accent-ink:#fffbee;
+}
+body{
+  background:radial-gradient(ellipse at 88% 0, #fffaf0 0, transparent 55%),var(--bg);
+}
+header.site{
+  background:#faf5e9;border-bottom:3px double var(--line);
+}
+header.site .wrap{height:auto;min-height:86px;padding-top:14px;padding-bottom:14px}
+.brand{max-width:250px;font-family:Georgia,"Batang",serif;font-size:20px;white-space:pre-line;line-height:1.6}
+
+nav.site{gap:20px;flex-wrap:wrap}
+nav.site a{display:inline-flex;align-items:center;min-height:44px}
+nav.site a:hover{text-decoration:underline;text-underline-offset:6px}
+.hero{
+  position:relative;padding:20px 0 18px;text-align:center;
+  background:linear-gradient(120deg,transparent 48%,#fff9e680 49%,#fff9e680 67%,transparent 68%),
+    repeating-linear-gradient(0deg,#ceb28a18 0 1px,transparent 1px 8px),#e9dfc9;
+  border-bottom:8px solid #b39770;box-shadow:0 4px 0 #d3ba96;
+}
+.hero .wrap{position:relative;display:flex;flex-direction:column;align-items:center}
+.hero h1{
+  position:relative;display:block;width:340px;max-width:100%;white-space:pre-line;margin:0 auto 8px;
+  padding:8px 32px;background:#f9f2df;border:1px solid #ad9873;
+  outline:1px solid #ad9873;outline-offset:-7px;
+  box-shadow:3px 5px 0 #8a704b20;font-family:Georgia,"Batang",serif;
+  font-size:34px;font-weight:600;line-height:1.5;letter-spacing:.12em;color:#405334;
+}
+
+.hero h1::before,.hero h1::after,.shop-vine::before,.shop-vine::after,footer.site .wrap::before{
+  content:"";position:absolute;width:29px;height:14px;border-radius:100% 0 100% 0;
+  background:#69794c;pointer-events:none;
+}
+.hero h1::before{top:8px;left:-12px;transform:rotate(28deg);box-shadow:19px -18px 0 #87936a}
+.hero h1::after{bottom:12px;right:-12px;transform:rotate(-30deg);background:#889669}
+.hero #hero-tagline{order:2;font-family:Georgia,"Batang",serif;font-size:21px;color:var(--ink)}
+.hero .shop-note{order:1;margin:0 auto 8px;max-width:520px;font-size:12px;line-height:1.6}
+.shop-vine{
+  position:absolute;right:28px;top:0;height:120px;width:35px;border-left:2px solid #7b8964;
+  border-radius:50%;transform:rotate(18deg);pointer-events:none;
+}
+.shop-vine::before{top:20px;left:-26px;transform:rotate(60deg)}
+.shop-vine::after{top:62px;left:0}
+main{padding:44px 0 72px}
+h2{font-family:Georgia,"Batang",serif;font-size:23px}
+.lead{font-size:14px}
+.grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:32px 24px}
+.card{
+  position:relative;min-width:0;padding:20px;border-radius:3px;
+  border:1px solid #c4b18d;border-bottom:7px solid #b08c60;
+  background:linear-gradient(110deg,#fffcf2,#f7eedc);
+  box-shadow:0 4px 0 #dac6a5,0 7px 9px #604c2410;
+  transition:transform .16s ease,box-shadow .16s ease;
+}
+.card:hover{transform:translateY(-2px);box-shadow:0 4px 0 #c7ad86,0 9px 12px #604c2420}
+.card .thumb{
+  display:flex;align-items:center;justify-content:center;height:112px;
+  margin:0 0 18px;font-size:52px;color:#7a674a;
+  background:radial-gradient(ellipse at 50% 75%,#b39b6a28,transparent 60%),#eae5d3;
+  border-bottom:1px solid #d0b991;
+}
+.card h3{font-size:18px}
+.card .sum{min-height:48px;line-height:1.75}
+.card .price{
+  display:table;padding:3px 14px 3px 21px;border:1px solid #cbb996;
+  background:radial-gradient(circle at 9px 50%,#ac9875 0 2px,transparent 2.5px),#f4e7cb;
+  border-radius:2px;font-size:15px;transform:rotate(-1deg);
+}
+.detail{grid-template-columns:240px minmax(0,1fr)}
+.detail .thumb{border-radius:3px;border-bottom:7px solid #b08c60;background:#eae5d3}
+.detail .body{max-width:650px}
+.btn{
+  border:1px solid #394c2f;border-radius:3px;min-height:46px;
+  box-shadow:0 3px 0 #304126;transition:transform .15s ease,box-shadow .15s ease;
+}
+.btn:hover{filter:none;transform:translateY(-1px);box-shadow:0 4px 0 #304126}
+.btn.ghost{background:#f8f0de;border-color:#b59d78;box-shadow:0 2px 0 #d2bfa0}
+a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #8e523d;outline-offset:4px}
+.prose{max-width:730px}
+#about-body,#shipping-body{
+  padding:26px 30px;background:var(--card);border:1px solid var(--line);
+  border-top:4px solid #a0a27c;box-shadow:3px 4px 0 #d6c6a42b;
+}
+table.cart{border-radius:3px}
+table.cart th{background:#ede2cd}
+form.pay{border-radius:3px;border-top:4px solid #9ba078;box-shadow:3px 4px 0 #d6c6a42b}
+form.pay input{border-radius:3px;background:#fffdf7}
+footer.site{
+  background:repeating-linear-gradient(0deg,#a0835710 0 1px,transparent 1px 7px),#e9dec8;
+  border-top:4px solid #b99b73;padding:30px 0 36px;
+}
+footer.site .wrap{position:relative;padding-left:52px}
+footer.site .wrap::before{left:20px;top:6px;width:21px;height:11px;transform:rotate(-25deg)}
+@media(max-width:760px){
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  header.site .wrap{flex-wrap:wrap;gap:6px 20px}
+  nav.site{gap:12px}
+}
+@media(max-width:480px){
+  .wrap{padding-left:16px;padding-right:16px}
+  header.site .wrap{display:block;padding-top:12px;padding-bottom:8px}
+  .brand{display:block;max-width:none}
+  nav.site{margin:8px 0 0;gap:0;justify-content:space-between;font-size:12px}
+  nav.site a{min-height:44px}
+  .cart-count{margin-left:3px;padding:0 6px}
+  .hero{padding:18px 0 16px}
+  .hero h1{font-size:30px;padding:8px 22px;letter-spacing:.08em}
+
+  .hero #hero-tagline{font-size:17px}
+  .hero .shop-note{font-size:12px}
+  .shop-vine{display:none}
+  main{padding:32px 0 48px}
+  h2{font-size:21px}
+  .grid{grid-template-columns:minmax(0,1fr);gap:26px}
+  .card .thumb{height:120px}
+  .card .sum{min-height:0}
+  .detail{grid-template-columns:minmax(0,1fr);gap:24px}
+  .detail h1{font-size:24px}
+  form.pay,#about-body,#shipping-body{padding:20px}
+  table.cart{table-layout:fixed;font-size:12px}
+  table.cart th,table.cart td{padding:10px 4px;overflow-wrap:anywhere}
+  table.cart th:first-child{width:35%}
+  table.cart th:nth-child(2){width:12%}
+  table.cart th:nth-child(3){width:30%}
+  table.cart th:nth-child(4){width:23%}
+  table.cart .btn{padding:10px 6px;font-size:12px;min-width:44px}
+  footer.site .wrap{padding-left:44px}
+  footer.site .wrap::before{left:16px;width:18px}
+}
+@media(prefers-reduced-motion:reduce){
+  .card,.btn{transition:none}
+  .card:hover,.btn:hover{transform:none}
+}
