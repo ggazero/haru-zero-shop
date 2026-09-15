@@ -114,6 +114,25 @@ function paintDetail() {
       <button class="btn" id="add-to-cart">장바구니에 담기</button>
     </div>`;
 
+  // 통로가 이미 있으면 그대로 쓰고, 없을 때만 새로 만든다
+  window.dataLayer = window.dataLayer || [];
+  // 앞에서 넣은 상품 값이 섞이지 않게 먼저 비운다
+  dataLayer.push({ ecommerce: null });
+  // 통로 끝에 한 덩어리를 넣는다 - 넣는 순간이 태그 관리자가 듣는 순간
+  dataLayer.push({
+    // 무슨 일이 일어났나 - 계획서 이름 글자 그대로
+    event: "view_item",
+    // 같이 보내는 상품 값 묶음
+    ecommerce: {
+      // 어느 나라 돈인가
+      currency: "KRW",
+      // 금액 - 지금 보고 있는 그 상품 가격
+      value: p.price,
+      // 보고 있는 상품 상자 하나를 목록에 넣는다
+      items: [{ item_id: p.id, item_name: p.name, price: p.price, quantity: 1 }]
+    }
+  });
+
   document.querySelector("#add-to-cart").addEventListener("click", () => {
     Cart.add(p.id);
     location.href = "cart.html";
