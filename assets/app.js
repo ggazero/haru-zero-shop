@@ -214,6 +214,36 @@ function paintCheckout() {
 
     // ▼ 여기에 「결제를 마쳤다」를 알리는 코드가 들어갑니다 (뒤 수업에서)
 
+    // 주문 번호 - 누른 시각(밀리초)에 임의 글자를 붙여 만든다
+    const orderId = "HZ" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
+
+    // 지금 주문한 상품 합계 - 상품 가격 × 수량의 합 (배송비는 들어 있지 않다)
+    const orderTotal = Cart.total();
+
+    // 통로가 이미 있으면 그대로 쓰고, 없을 때만 새로 만든다
+    window.dataLayer = window.dataLayer || [];
+    // 앞에서 넣은 상품 값이 섞이지 않게 먼저 비운다
+    dataLayer.push({ ecommerce: null });
+    // 통로 끝에 한 덩어리를 넣는다 - 넣는 순간이 태그 관리자가 듣는 순간
+    dataLayer.push({
+      // 무슨 일이 일어났나 - 계획서 이름 글자 그대로
+      event: "purchase",
+      // 같이 보내는 주문 값 묶음
+      ecommerce: {
+        // 주문 하나를 가리키는 번호 - 같은 주문이 두 번 세어지지 않게 한다
+        transaction_id: orderId,
+        // 어느 나라 돈인가
+        currency: "KRW",
+        // 금액 - 주문한 상품 합계
+        value: orderTotal,
+        // 주문한 상품을 하나씩 상자에 담아 목록으로 넣는다
+        items: Cart.read().map(i => {
+          const p = findProduct(i.id);
+          return { item_id: p.id, item_name: p.name, price: p.price, quantity: i.qty };
+        })
+      }
+    });
+
     Cart.clear();
     location.href = "done.html";
   });
