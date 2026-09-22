@@ -7,6 +7,24 @@ const won = n => n.toLocaleString("ko-KR") + "원";
 const findProduct = id => PRODUCTS.find(p => p.id === id);
 const qs = key => new URLSearchParams(location.search).get(key);
 
+/* --- 배송비 규칙 (shop.js 배송 안내와 같습니다) ---
+   배송비는 늘 3,000원으로 적어 두고, 상품 금액이 5만 원 이상이면
+   그만큼을 할인으로 빼 줍니다. 그래야 "얼마였는데 왜 안 내는지"가 화면에 남습니다.
+   장바구니 화면과 결제 화면이 이 규칙 하나를 같이 씁니다. */
+const SHIP_FEE = 3000;
+const SHIP_FREE_FROM = 50000;
+function shippingOf(goodsTotal) {
+  const discount = goodsTotal >= SHIP_FREE_FROM ? SHIP_FEE : 0;
+  return {
+    fee: SHIP_FEE,
+    discount,
+    payable: goodsTotal + SHIP_FEE - discount,
+    note: discount > 0
+      ? "5만 원 이상 주문으로 배송비가 없습니다."
+      : "5만 원 미만 주문은 배송비 3,000원입니다."
+  };
+}
+
 /* --- 장바구니는 브라우저에 저장합니다 --- */
 const Cart = {
   read() {
@@ -150,6 +168,10 @@ function paintCart() {
     return;
   }
 
+  /* 결제 화면과 같은 배송 규칙을 미리 보여 줍니다 */
+  const goodsTotal = Cart.total();
+  const ship = shippingOf(goodsTotal);
+
   box.innerHTML = `
     <table class="cart">
       <tr><th>상품</th><th>수량</th><th>금액</th><th></th></tr>
@@ -163,8 +185,14 @@ function paintCart() {
           <td><button class="btn ghost drop" data-id="${p.id}">빼기</button></td>
         </tr>`;
       }).join("")}
+      <tr><th colspan="2" scope="row">상품 금액</th><td>${won(goodsTotal)}</td><td></td></tr>
+      <tr><th colspan="2" scope="row">배송비</th><td>${won(ship.fee)}</td><td></td></tr>
+      ${ship.discount > 0
+        ? `<tr><th colspan="2" scope="row">무료배송 할인</th><td>-${won(ship.discount)}</td><td></td></tr>`
+        : ""}
     </table>
-    <div class="total">합계 ${won(Cart.total())}</div>
+    <div class="total">예상 결제 금액 ${won(ship.payable)}</div>
+    <p class="lead">${ship.note}</p>
     <a class="btn" href="checkout.html">결제하기</a>`;
 
   box.querySelectorAll(".drop").forEach(b => {
@@ -181,29 +209,23 @@ function paintCheckout() {
   if (sum) sum.textContent = won(Cart.total());
 
   /* --- 금액 요약: 상품 금액 / 배송비 / 무료배송 할인 / 최종 결제 금액 ---
-     배송 안내(shop.js)와 같은 규칙입니다.
-     배송비는 늘 3,000원으로 적어 두고, 5만 원 이상이면 그만큼을 할인으로 빼 줍니다.
-     그래야 "얼마였는데 왜 안 내는지"가 화면에 남습니다. */
-  const goodsTotal = Cart.total();
-  const shipFee = 3000;
-  const shipDiscount = goodsTotal >= 50000 ? shipFee : 0;
+     배송 규칙은 장바구니 화면과 같은 shippingOf() 를 씁니다 */
+  const ship = shippingOf(Cart.total());
 
   const shipBox = document.querySelector("#pay-shipping");
-  if (shipBox) shipBox.textContent = won(shipFee);
+  if (shipBox) shipBox.textContent = won(ship.fee);
 
   const discountRow = document.querySelector("#pay-discount-row");
   const discountBox = document.querySelector("#pay-discount");
-  if (discountBox) discountBox.textContent = "-" + won(shipDiscount);
+  if (discountBox) discountBox.textContent = "-" + won(ship.discount);
   /* 할인이 없는 주문에서는 할인 줄을 아예 내려 둡니다 */
-  if (discountRow) discountRow.hidden = shipDiscount === 0;
+  if (discountRow) discountRow.hidden = ship.discount === 0;
 
   const grandBox = document.querySelector("#pay-grand");
-  if (grandBox) grandBox.textContent = won(goodsTotal + shipFee - shipDiscount);
+  if (grandBox) grandBox.textContent = won(ship.payable);
 
   const shipNote = document.querySelector("#pay-ship-note");
-  if (shipNote) shipNote.textContent = shipDiscount > 0
-    ? "5만 원 이상 주문으로 배송비가 없습니다."
-    : "5만 원 미만 주문은 배송비 3,000원입니다.";
+  if (shipNote) shipNote.textContent = ship.note;
 
   // ▼ 여기에 「결제 화면이 열렸다」를 알리는 코드가 들어갑니다 (뒤 수업에서)
 
