@@ -180,6 +180,31 @@ function paintCheckout() {
   const sum = document.querySelector("#pay-total");
   if (sum) sum.textContent = won(Cart.total());
 
+  /* --- 금액 요약: 상품 금액 / 배송비 / 무료배송 할인 / 최종 결제 금액 ---
+     배송 안내(shop.js)와 같은 규칙입니다.
+     배송비는 늘 3,000원으로 적어 두고, 5만 원 이상이면 그만큼을 할인으로 빼 줍니다.
+     그래야 "얼마였는데 왜 안 내는지"가 화면에 남습니다. */
+  const goodsTotal = Cart.total();
+  const shipFee = 3000;
+  const shipDiscount = goodsTotal >= 50000 ? shipFee : 0;
+
+  const shipBox = document.querySelector("#pay-shipping");
+  if (shipBox) shipBox.textContent = won(shipFee);
+
+  const discountRow = document.querySelector("#pay-discount-row");
+  const discountBox = document.querySelector("#pay-discount");
+  if (discountBox) discountBox.textContent = "-" + won(shipDiscount);
+  /* 할인이 없는 주문에서는 할인 줄을 아예 내려 둡니다 */
+  if (discountRow) discountRow.hidden = shipDiscount === 0;
+
+  const grandBox = document.querySelector("#pay-grand");
+  if (grandBox) grandBox.textContent = won(goodsTotal + shipFee - shipDiscount);
+
+  const shipNote = document.querySelector("#pay-ship-note");
+  if (shipNote) shipNote.textContent = shipDiscount > 0
+    ? "5만 원 이상 주문으로 배송비가 없습니다."
+    : "5만 원 미만 주문은 배송비 3,000원입니다.";
+
   // ▼ 여기에 「결제 화면이 열렸다」를 알리는 코드가 들어갑니다 (뒤 수업에서)
 
   // 지금 장바구니 합계 - 상품 가격 × 수량의 합 (배송비는 들어 있지 않다)

@@ -46,7 +46,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <input id="addr" name="addr" required placeholder="받으실 주소">
     <label for="phone">연락처</label>
     <input id="phone" name="phone" required placeholder="숫자만">
-    <div class="total">합계 <span id="pay-total">0원</span></div>
+    <!-- 금액 요약: 장바구니 화면과 같은 표(table.cart)·합계(.total) 스타일을 그대로 씁니다.
+         값은 app.js 가 채웁니다 -->
+    <table class="cart">
+      <tr><th scope="row">상품 금액</th><td><span id="pay-total">0원</span></td></tr>
+      <tr><th scope="row">배송비</th><td id="pay-shipping">0원</td></tr>
+      <!-- 무료배송 할인: 5만 원 미만이면 app.js 가 이 줄을 숨깁니다 -->
+      <tr id="pay-discount-row" hidden><th scope="row">무료배송 할인</th><td id="pay-discount">0원</td></tr>
+    </table>
+    <div class="total">최종 결제 금액 <span id="pay-grand">0원</span></div>
+    <p class="lead" id="pay-ship-note"></p>
     <button class="btn" type="submit">결제하기</button>
   </form>
 </div></main>
