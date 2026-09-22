@@ -85,6 +85,9 @@
   }
 
   function addReopen() {
+    /* 이미 붙여 둔 링크가 있으면 다시 만들지 않습니다 */
+    if (document.getElementById("consent-reopen")) return;
+
     var link = document.createElement("a");
     link.id = "consent-reopen";
     link.href = "#";
@@ -93,7 +96,10 @@
       e.preventDefault();
       show();
     });
-    var foot = document.querySelector("footer.site .wrap");
+    /* .wrap 안이 아니라 footer.site 의 자식으로 붙입니다.
+       app.js 의 paintChrome() 이 .wrap 의 textContent 를 덮어써도
+       그 바깥에 있는 이 링크는 지워지지 않습니다. */
+    var foot = document.querySelector("footer.site");
     (foot || document.body).appendChild(link);
   }
 
