@@ -51,5 +51,25 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <footer class="site"><div class="wrap"></div></footer>
 <script src="assets/shop.js"></script>
 <script src="assets/app.js"></script>
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyA6xKS1r79xUj2wDsK-OaroN6a2SrB-qFg",
+    authDomain: "small-shop-80f62.firebaseapp.com",
+    projectId: "small-shop-80f62",
+    storageBucket: "small-shop-80f62.firebasestorage.app",
+    messagingSenderId: "852740748392",
+    appId: "1:852740748392:web:83c836620d0665f28db7dd"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  console.log("Firebase 연결:", app.options.projectId);
+</script>
 </body>
 </html>
