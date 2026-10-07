@@ -1,5 +1,5 @@
 import { initializeApp, getApp, getApps } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signOut, sendEmailVerification } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
   const firebaseConfig = {
     apiKey: "AIzaSyA6xKS1r79xUj2wDsK-OaroN6a2SrB-qFg",
     authDomain: "small-shop-80f62.firebaseapp.com",
@@ -9,6 +9,10 @@ import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/fi
     appId: "1:852740748392:web:83c836620d0665f28db7dd"
   };
 export const auth = getAuth(getApps().length ? getApp() : initializeApp(firebaseConfig));
+auth.languageCode = "ko";
+export function sendVerificationEmail(user) {
+  return sendEmailVerification(user);
+}
 const listeners = new Set();
 let currentUser, ready = false, resolveReady;
 export const authReady = new Promise(resolve => { resolveReady = resolve; });

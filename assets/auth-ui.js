@@ -1,4 +1,5 @@
-import { subscribeAuth, logoutToHome } from "./auth.js";
+import { auth, subscribeAuth, logoutToHome, sendVerificationEmail } from "./auth.js";
+import { reload } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 const nav = document.querySelector("header.site nav.site");
 const account = document.createElement("span");
 account.className = "account-nav";
@@ -23,7 +24,24 @@ function logoutButton() {
   });
   return button;
 }
-subscribeAuth(user => {
+let verificationCheck = 0;
+const verification = document.getElementById("email-verification");
+const verificationStatus = document.getElementById("verification-status");
+const resend = document.getElementById("resend-verification");
+if (resend) resend.addEventListener("click", async () => {
+  resend.disabled = true;
+  try {
+    await sendVerificationEmail(auth.currentUser);
+    verificationStatus.textContent = "인증 메일을 보냈습니다. 메일함과 스팸함을 확인해 주세요.";
+  } catch (error) {
+    verificationStatus.textContent = error.code === "auth/too-many-requests"
+      ? "잠시 뒤에 다시 눌러 주세요." : error.code;
+  } finally {
+    resend.disabled = false;
+  }
+});
+subscribeAuth(async user => {
+  const check = ++verificationCheck;
   account.replaceChildren();
   if (user) {
     const email = document.createElement("span");
@@ -34,7 +52,16 @@ subscribeAuth(user => {
   const page = document.getElementById("mypage-content");
   if (!page) return;
   page.hidden = true;
+  verification.hidden = true;
   if (!user) { location.replace("login.html?next=mypage.html"); return; }
+  try {
+    await reload(user);
+  } catch (error) {
+    if (check === verificationCheck) status.textContent = error.code;
+    return;
+  }
+  if (check !== verificationCheck || auth.currentUser !== user) return;
+  verification.hidden = user.emailVerified;
   document.getElementById("mypage-email").textContent = user.email;
   document.getElementById("mypage-actions").replaceChildren(logoutButton());
   page.hidden = false;

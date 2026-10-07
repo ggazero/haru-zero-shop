@@ -48,7 +48,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </form>
   </div></main>
   <script type="module">
-    import { auth, authReady, loginReturnPath, logoutToHome } from "./assets/auth.js";
+    import { auth, authReady, loginReturnPath, logoutToHome, sendVerificationEmail } from "./assets/auth.js";
     import {
       createUserWithEmailAndPassword,
       signInWithEmailAndPassword
@@ -88,8 +88,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           await createUserWithEmailAndPassword(auth, email.value.trim(), password.value);
           window.dataLayer = window.dataLayer || [];
           window.dataLayer.push({ event: "sign_up", method: "email" });
+          await sendVerificationEmail(auth.currentUser);
+          status.textContent = "인증 메일을 보냈습니다. 메일함과 스팸함을 확인해 주세요.";
+          if (returnPath) await new Promise(resolve => setTimeout(resolve, 1500));
         },
-        "가입이 완료되어 로그인되었습니다."
+        "인증 메일을 보냈습니다. 메일함과 스팸함을 확인해 주세요."
       );
     });
     form.addEventListener("submit", event => {
