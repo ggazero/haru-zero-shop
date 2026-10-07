@@ -10,8 +10,22 @@
     .btn:disabled { opacity:.6; cursor:wait; }
     #auth-status { min-height:1.75em; margin:20px 0 0; overflow-wrap:anywhere; }
   </style>
+<!-- 동의 배너: 기본값 denied. 태그 관리자보다 먼저 -->
+<script src="assets/consent.js"></script>
+
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-KSLR9BSG');</script>
+<!-- End Google Tag Manager -->
 </head>
 <body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KSLR9BSG"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
   <header class="site"><div class="wrap">
     <a class="brand" href="index.html">하루상점</a>
     <nav class="site"><a href="index.html">상품</a></nav>
@@ -72,7 +86,11 @@
 
     document.getElementById("signup").addEventListener("click", () => {
       runAuth(
-        () => createUserWithEmailAndPassword(auth, email.value.trim(), password.value),
+        async () => {
+          await createUserWithEmailAndPassword(auth, email.value.trim(), password.value);
+          window.dataLayer = window.dataLayer || [];
+          window.dataLayer.push({ event: "sign_up", method: "email" });
+        },
         "가입이 완료되어 로그인되었습니다."
       );
     });
