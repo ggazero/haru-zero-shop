@@ -43,6 +43,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <button class="btn" type="submit">로그인</button>
         <button class="btn ghost" id="logout" type="button">로그아웃</button>
       </div>
+      <p><a href="#" id="forgot-password">비밀번호를 잊으셨나요?</a></p>
       <p><small>도서관이나 학교처럼 같이 쓰는 컴퓨터에서는, 작은상점을 다 보신 뒤 로그아웃을 눌러 주세요.</small></p>
       <p id="auth-status" role="status" aria-live="polite" aria-atomic="true"></p>
     </form>
@@ -51,7 +52,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     import { auth, authReady, loginReturnPath, logoutToHome, sendVerificationEmail } from "./assets/auth.js";
     import {
       createUserWithEmailAndPassword,
-      signInWithEmailAndPassword
+      signInWithEmailAndPassword,
+      sendPasswordResetEmail
     } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 
 
@@ -104,6 +106,29 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     });
     document.getElementById("logout").addEventListener("click", () => {
       runAuth(() => logoutToHome(), "로그아웃되었습니다.");
+    });
+    let resetting = false;
+    document.getElementById("forgot-password").addEventListener("click", async event => {
+      event.preventDefault();
+      if (resetting) return;
+      if (!email.value.trim() || !email.checkValidity()) {
+        status.textContent = "이메일 칸에 가입한 주소를 입력한 뒤 다시 눌러 주세요.";
+        email.focus();
+        return;
+      }
+      resetting = true;
+      buttons.forEach(button => { button.disabled = true; });
+      status.textContent = "처리 중입니다.";
+      try {
+        await sendPasswordResetEmail(auth, email.value.trim());
+        status.textContent = "메일을 보냈습니다. 가입된 주소라면 곧 도착합니다.";
+      } catch (error) {
+        status.textContent = error.code === "auth/user-not-found"
+          ? "메일을 보냈습니다. 가입된 주소라면 곧 도착합니다." : error.code;
+      } finally {
+        resetting = false;
+        buttons.forEach(button => { button.disabled = false; });
+      }
     });
   </script>
 <script type="module" src="assets/auth-ui.js"></script>
