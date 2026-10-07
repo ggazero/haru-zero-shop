@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>로그인 · 하루상점</title>
   <link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/auth.css">
   <style>
     .auth-actions { display:flex; flex-wrap:wrap; gap:12px; }
     .btn:disabled { opacity:.6; cursor:wait; }
@@ -46,24 +47,18 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </form>
   </div></main>
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+    import { auth, authReady, loginReturnPath, logoutToHome } from "./assets/auth.js";
     import {
-      getAuth,
       createUserWithEmailAndPassword,
-      signInWithEmailAndPassword,
-      signOut
+      signInWithEmailAndPassword
     } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyA6xKS1r79xUj2wDsK-OaroN6a2SrB-qFg",
-      authDomain: "small-shop-80f62.firebaseapp.com",
-      projectId: "small-shop-80f62",
-      storageBucket: "small-shop-80f62.firebasestorage.app",
-      messagingSenderId: "852740748392",
-      appId: "1:852740748392:web:83c836620d0665f28db7dd"
-    };
 
-    const auth = getAuth(initializeApp(firebaseConfig));
+
+    const returnPath = loginReturnPath();
+    authReady.then(user => {
+      if (user && returnPath) location.replace(returnPath);
+    });
     const form = document.getElementById("auth-form");
     const email = document.getElementById("email");
     const password = document.getElementById("password");
@@ -74,9 +69,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       buttons.forEach(button => { button.disabled = true; });
       status.textContent = "처리 중입니다.";
       try {
+        await authReady;
         await action();
         password.value = "";
         status.textContent = successMessage;
+        if (returnPath && auth.currentUser) location.replace(returnPath);
       } catch (error) {
         status.textContent = error.code;
       } finally {
@@ -102,8 +99,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       );
     });
     document.getElementById("logout").addEventListener("click", () => {
-      runAuth(() => signOut(auth), "로그아웃되었습니다.");
+      runAuth(() => logoutToHome(), "로그아웃되었습니다.");
     });
   </script>
+<script type="module" src="assets/auth-ui.js"></script>
 </body>
 </html>

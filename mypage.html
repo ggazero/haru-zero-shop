@@ -3,11 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>주문 완료 — 작은상점</title>
-<meta name="description" content="주문이 접수되었습니다">
+<title>마이페이지 · 하루상점</title>
 <link rel="stylesheet" href="assets/style.css">
 <link rel="stylesheet" href="assets/auth.css">
-
 <!-- 동의 배너: 기본값 denied. 태그 관리자보다 먼저 -->
 <script src="assets/consent.js"></script>
 
@@ -18,15 +16,12 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
 })(window,document,'script','dataLayer','GTM-KSLR9BSG');</script>
 <!-- End Google Tag Manager -->
-
 </head>
 <body>
-
 <!-- Google Tag Manager (noscript) -->
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KSLR9BSG"
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
-
 <header class="site"><div class="wrap">
   <a class="brand" href="index.html">작은상점</a>
   <nav class="site">
@@ -36,14 +31,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <a href="cart.html">장바구니<span class="cart-count">0</span></a>
   </nav>
 </div></header>
-
-<main><div class="wrap">
-  <h2>주문이 접수되었습니다</h2>
-  <div class="prose">
-    <p>연습용 주문이라 실제로 배송되지는 않습니다.</p>
-    <p>영업일 기준 이틀 안에 보내드리는 것이 원래 약속입니다.</p>
-  </div>
-  <a class="btn" href="index.html">계속 둘러보기</a>
+<main id="mypage-content" hidden><div class="wrap">
+  <h1>마이페이지</h1>
+  <p>이메일: <span id="mypage-email"></span></p>
+  <div id="mypage-actions"></div>
 </div></main>
 <footer class="site"><div class="wrap"></div></footer>
 <script src="assets/shop.js"></script>

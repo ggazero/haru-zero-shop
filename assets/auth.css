@@ -1,0 +1,5 @@
+.account-nav { display:flex; flex-wrap:wrap; align-items:center; gap:12px; min-width:0; }
+.account-email { overflow-wrap:anywhere; }
+header.site nav.site { flex-wrap:wrap; align-items:center; min-width:0; }
+header.site .wrap { flex-wrap:wrap; }
+#mypage-content[hidden] { display:none; }

@@ -6,6 +6,7 @@
 <title>작은상점</title>
 <meta name="description" content="큰 세상에서 건져 내린 작은 살림들.">
 <link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/auth.css">
 
 <!-- 동의 배너: 기본값 denied. 태그 관리자보다 먼저 -->
 <script src="assets/consent.js"></script>
@@ -53,23 +54,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script src="assets/app.js"></script>
 <script type="module">
   // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+  import { auth } from "./assets/auth.js";
   // TODO: Add SDKs for Firebase products that you want to use
   // https://firebase.google.com/docs/web/setup#available-libraries
 
   // Your web app's Firebase configuration
-  const firebaseConfig = {
-    apiKey: "AIzaSyA6xKS1r79xUj2wDsK-OaroN6a2SrB-qFg",
-    authDomain: "small-shop-80f62.firebaseapp.com",
-    projectId: "small-shop-80f62",
-    storageBucket: "small-shop-80f62.firebasestorage.app",
-    messagingSenderId: "852740748392",
-    appId: "1:852740748392:web:83c836620d0665f28db7dd"
-  };
+
 
   // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
+  const app = auth.app;
   console.log("Firebase 연결:", app.options.projectId);
 </script>
+<script type="module" src="assets/auth-ui.js"></script>
 </body>
 </html>
