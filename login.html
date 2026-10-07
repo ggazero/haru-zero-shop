@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>로그인 · 하루상점</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <style>
+    .auth-actions { display:flex; flex-wrap:wrap; gap:12px; }
+    .btn:disabled { opacity:.6; cursor:wait; }
+    #auth-status { min-height:1.75em; margin:20px 0 0; overflow-wrap:anywhere; }
+  </style>
+</head>
+<body>
+  <header class="site"><div class="wrap">
+    <a class="brand" href="index.html">하루상점</a>
+    <nav class="site"><a href="index.html">상품</a></nav>
+  </div></header>
+  <main><div class="wrap">
+    <h1>로그인</h1>
+    <form class="pay" id="auth-form" novalidate>
+      <label for="email">이메일</label>
+      <input id="email" type="email" autocomplete="username" required>
+      <label for="password">비밀번호</label>
+      <input id="password" type="password" autocomplete="current-password" required>
+      <div class="auth-actions">
+        <button class="btn" id="signup" type="button">가입</button>
+        <button class="btn" type="submit">로그인</button>
+        <button class="btn ghost" id="logout" type="button">로그아웃</button>
+      </div>
+      <p id="auth-status" role="status" aria-live="polite" aria-atomic="true"></p>
+    </form>
+  </div></main>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+    import {
+      getAuth,
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA6xKS1r79xUj2wDsK-OaroN6a2SrB-qFg",
+      authDomain: "small-shop-80f62.firebaseapp.com",
+      projectId: "small-shop-80f62",
+      storageBucket: "small-shop-80f62.firebasestorage.app",
+      messagingSenderId: "852740748392",
+      appId: "1:852740748392:web:83c836620d0665f28db7dd"
+    };
+
+    const auth = getAuth(initializeApp(firebaseConfig));
+    const form = document.getElementById("auth-form");
+    const email = document.getElementById("email");
+    const password = document.getElementById("password");
+    const status = document.getElementById("auth-status");
+    const buttons = form.querySelectorAll("button");
+
+    async function runAuth(action, successMessage) {
+      buttons.forEach(button => { button.disabled = true; });
+      status.textContent = "처리 중입니다.";
+      try {
+        await action();
+        password.value = "";
+        status.textContent = successMessage;
+      } catch (error) {
+        status.textContent = error.code;
+      } finally {
+        buttons.forEach(button => { button.disabled = false; });
+      }
+    }
+
+    document.getElementById("signup").addEventListener("click", () => {
+      runAuth(
+        () => createUserWithEmailAndPassword(auth, email.value.trim(), password.value),
+        "가입이 완료되어 로그인되었습니다."
+      );
+    });
+    form.addEventListener("submit", event => {
+      event.preventDefault();
+      runAuth(
+        () => signInWithEmailAndPassword(auth, email.value.trim(), password.value),
+        "로그인되었습니다."
+      );
+    });
+    document.getElementById("logout").addEventListener("click", () => {
+      runAuth(() => signOut(auth), "로그아웃되었습니다.");
+    });
+  </script>
+</body>
+</html>
