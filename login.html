@@ -67,6 +67,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     const password = document.getElementById("password");
     const status = document.getElementById("auth-status");
     const buttons = form.querySelectorAll("button");
+    const authErrorMessages = {
+      "auth/invalid-credential": "로그인이 어렵습니다. 이메일 또는 비밀번호를 다시 확인해 주세요.",
+      "auth/email-already-in-use": "이미 우리 가게 회원이에요. 새로 가입하지 말고 로그인해 주세요.",
+      "auth/weak-password": "비밀번호가 조금 짧아요. 6자 이상으로 다시 입력해 주세요.",
+      "auth/invalid-email": "이메일 주소 형식을 확인해 주세요. @ 등이 빠지지 않았는지 확인해 주세요."
+    };
+    function authErrorMessage(error) {
+      return authErrorMessages[error && error.code] || "문제가 생겼어요. 조금 뒤에 다시 시도해 주세요.";
+    }
 
     async function runAuth(action, successMessage) {
       buttons.forEach(button => { button.disabled = true; });
@@ -78,7 +87,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         status.textContent = successMessage;
         if (returnPath && auth.currentUser) location.replace(returnPath);
       } catch (error) {
-        status.textContent = error.code;
+        status.textContent = authErrorMessage(error);
       } finally {
         buttons.forEach(button => { button.disabled = false; });
       }
