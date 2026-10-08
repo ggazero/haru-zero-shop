@@ -1,5 +1,5 @@
 import { auth, subscribeAuth, logoutToHome, sendVerificationEmail } from "./auth.js";
-import { reload } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+import { reload, linkWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 const nav = document.querySelector("header.site nav.site");
 const account = document.createElement("span");
 account.className = "account-nav";
@@ -61,6 +61,36 @@ if (resend) resend.addEventListener("click", async () => {
     resend.disabled = false;
   }
 });
+const googleLink = document.getElementById("google-link");
+const googleLinkStatus = document.getElementById("google-link-status");
+// 이미 구글이 붙어 있으면 버튼 대신 「연결됨」을 보여 준다
+function renderGoogleLink(user) {
+  if (user.providerData.some(profile => profile.providerId === "google.com")) {
+    const linked = document.createElement("span");
+    linked.textContent = "연결됨";
+    googleLink.replaceChildren(linked);
+    return;
+  }
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "btn";
+  button.textContent = "구글 계정 연결하기";
+  button.addEventListener("click", async () => {
+    // 팝업이 막히지 않도록 클릭 직후 바로 연다. 새 계정이 아니라 지금 계정에 붙인다
+    const popup = linkWithPopup(auth.currentUser, new GoogleAuthProvider());
+    button.disabled = true;
+    googleLinkStatus.textContent = "";
+    try {
+      const { user: linkedUser } = await popup;
+      renderGoogleLink(linkedUser);
+      googleLinkStatus.textContent = "구글 계정을 연결했어요.";
+    } catch (error) {
+      button.disabled = false;
+      googleLinkStatus.textContent = error.code || error.message;
+    }
+  });
+  googleLink.replaceChildren(button);
+}
 subscribeAuth(async user => {
   const check = ++verificationCheck;
   account.replaceChildren();
@@ -88,5 +118,7 @@ subscribeAuth(async user => {
   verification.hidden = user.emailVerified;
   document.getElementById("mypage-email").textContent = user.email;
   document.getElementById("mypage-actions").replaceChildren(logoutButton());
+  googleLinkStatus.textContent = "";
+  renderGoogleLink(user);
   page.hidden = false;
 });
