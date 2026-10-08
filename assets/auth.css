@@ -1,5 +1,11 @@
 .account-nav { display:flex; flex-wrap:wrap; align-items:center; gap:12px; min-width:0; }
 .account-email { overflow-wrap:anywhere; }
+.account-profile { display:inline-flex; align-items:center; gap:8px; min-width:0; }
+.account-avatar { flex:none; display:inline-flex; align-items:center; justify-content:center;
+  width:32px; height:32px; overflow:hidden; border-radius:50%;
+  background:var(--accent); color:var(--accent-ink); border:2px solid #d2bfa0;
+  font-family:Georgia,"Batang",serif; font-size:15px; font-weight:600; line-height:1; }
+.account-avatar img { width:100%; height:100%; object-fit:cover; display:block; }
 header.site nav.site { flex-wrap:wrap; align-items:center; min-width:0; }
 header.site .wrap { flex-wrap:wrap; }
 #mypage-content[hidden] { display:none; }

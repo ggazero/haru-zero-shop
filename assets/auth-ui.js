@@ -12,6 +12,27 @@ function link(text, href) {
   node.href = href;
   return node;
 }
+export function displayName(user) {
+  return user.displayName || user.email;
+}
+export function profileAvatar(user) {
+  const avatar = document.createElement("span");
+  avatar.className = "account-avatar";
+  avatar.setAttribute("aria-hidden", "true");
+  const initial = () => {
+    avatar.replaceChildren();
+    avatar.textContent = (Array.from(displayName(user) || "?")[0] || "?").toUpperCase();
+  };
+  if (user.photoURL) {
+    const img = document.createElement("img");
+    img.alt = "";
+    img.referrerPolicy = "no-referrer";
+    img.addEventListener("error", initial);
+    img.src = user.photoURL;
+    avatar.append(img);
+  } else initial();
+  return avatar;
+}
 function logoutButton() {
   const button = document.createElement("button");
   button.type = "button";
@@ -44,10 +65,13 @@ subscribeAuth(async user => {
   const check = ++verificationCheck;
   account.replaceChildren();
   if (user) {
+    const profile = document.createElement("span");
+    profile.className = "account-profile";
     const email = document.createElement("span");
     email.className = "account-email";
-    email.textContent = user.displayName || user.email;
-    account.append(email, link("마이페이지", "mypage.html"), logoutButton());
+    email.textContent = displayName(user);
+    profile.append(profileAvatar(user), email);
+    account.append(profile, link("마이페이지", "mypage.html"), logoutButton());
   } else account.append(link("로그인", "login.html"));
   const page = document.getElementById("mypage-content");
   if (!page) return;
