@@ -46,7 +46,7 @@ subscribeAuth(async user => {
   if (user) {
     const email = document.createElement("span");
     email.className = "account-email";
-    email.textContent = user.email;
+    email.textContent = user.displayName || user.email;
     account.append(email, link("마이페이지", "mypage.html"), logoutButton());
   } else account.append(link("로그인", "login.html"));
   const page = document.getElementById("mypage-content");
