@@ -4,16 +4,22 @@
    긴 설명(detail)과 그림(emoji)은 그대로 shop.js 에서 읽습니다.
    =========================================================== */
 import {
-  getFirestore, collection, doc, getDocs, getDoc,
+  getFirestore, collection, doc, query, where, orderBy, limit, getDocs, getDoc,
   writeBatch, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 import { auth, subscribeAuth } from "./auth.js";
 
 const db = getFirestore(auth.app);
 
-// products 컬렉션의 문서 전체를 읽는다 (숨긴 상품 거르기는 다음 실습에서)
+// 숨기지 않은 상품만, 가격이 낮은 순서로, 3개까지 Firestore 쿼리에서 바로 읽는다
+// (isVisible + price 복합 색인이 있어야 동작한다)
 export async function loadProducts() {
-  const snap = await getDocs(collection(db, "products"));
+  const snap = await getDocs(query(
+    collection(db, "products"),
+    where("isVisible", "==", true),
+    orderBy("price"),
+    limit(3)
+  ));
   return { products: snap.docs.map(d => ({ id: d.id, ...d.data() })), reads: snap.size };
 }
 

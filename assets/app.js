@@ -124,7 +124,9 @@ async function paintList() {
     mod = await import(PRODUCTS_MODULE);
     list = await mod.loadProducts();
   } catch (error) {
-    box.innerHTML = `<p class="empty">${esc(errorText(error))}</p>`;
+    // 원본 오류는 Console 에, 화면에는 한 줄만
+    console.error(error);
+    box.innerHTML = '<p class="empty">목록을 불러오지 못했습니다</p>';
     return;
   }
 
