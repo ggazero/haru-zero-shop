@@ -217,6 +217,8 @@ async function paintDetail() {
       <p class="stock">${stockText(p.stock)}</p>
       <div class="body prose">${p.detail.map(t => `<p>${t}</p>`).join("")}</div>
       <button class="btn" id="add-to-cart"${p.stock > 0 ? "" : " disabled"}>장바구니에 담기</button>
+      <button class="btn ghost" id="buy-now" type="button">바로 주문</button>
+      <p class="order-result" id="order-result" role="status"></p>
     </div>`;
 
   // 통로가 이미 있으면 그대로 쓰고, 없을 때만 새로 만든다
@@ -241,6 +243,28 @@ async function paintDetail() {
   document.querySelector("#add-to-cart").addEventListener("click", () => {
     Cart.add(p.id);
     location.href = "cart.html";
+  });
+
+  // 「바로 주문」: 장바구니를 거치지 않고 Firestore 에 주문을 바로 쓴다 (결제 측정 이벤트는 보내지 않는다)
+  const buyNow = document.querySelector("#buy-now");
+  const orderResult = document.querySelector("#order-result");
+  buyNow.addEventListener("click", async () => {
+    buyNow.disabled = true;
+    orderResult.textContent = "주문하는 중입니다.";
+    try {
+      const mod = await import(PRODUCTS_MODULE);
+      const result = await mod.placeOrder(p.id);
+      if (result.status === "login") orderResult.textContent = "로그인이 필요합니다";
+      else if (result.status === "soldout") orderResult.textContent = "재고가 없습니다";
+      else orderResult.textContent = `주문이 완료되었습니다. 주문 번호 ${result.orderId}`;
+      if (result.stock !== undefined) box.querySelector(".stock").textContent = stockText(result.stock);
+    } catch (error) {
+      // 오류 글은 줄이지 않고 그대로 보여 준다
+      console.error(error);
+      orderResult.textContent = errorText(error);
+    } finally {
+      buyNow.disabled = false;
+    }
   });
 }
 

@@ -5,9 +5,9 @@
    =========================================================== */
 import {
   getFirestore, collection, doc, query, where, orderBy, limit, startAfter, getDocs, getDoc,
-  writeBatch, serverTimestamp
+  writeBatch, serverTimestamp, runTransaction
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
-import { auth, subscribeAuth } from "./auth.js";
+import { auth, authReady, subscribeAuth } from "./auth.js";
 
 const db = getFirestore(auth.app);
 
@@ -42,6 +42,34 @@ export async function loadProduct(id) {
     product: snap.exists() ? { id: snap.id, ...snap.data() } : null,
     reads: snap.exists() ? 1 : 0
   };
+}
+
+/* --- 「바로 주문」: 재고 확인 · 주문 만들기 · 재고 1개 빼기를 트랜잭션 하나로 ---
+   셋 다 되거나 하나도 안 된다. 이름과 가격은 트랜잭션에서 읽은 상품 문서 값을 쓴다.
+   돌려주는 status: "login"(로그인 안 함) · "soldout"(재고 없음) · "ok"(주문 완료) */
+export async function placeOrder(productId) {
+  const user = await authReady && auth.currentUser;
+  if (!user) return { status: "login" };
+
+  const productRef = doc(db, "products", productId);
+  const orderRef = doc(collection(db, "orders"));
+  return runTransaction(db, async tx => {
+    const snap = await tx.get(productRef);
+    if (!snap.exists()) throw new Error(`products/${productId} 문서가 없습니다.`);
+    const p = snap.data();
+    if (!(p.stock >= 1)) return { status: "soldout", stock: p.stock };
+
+    const quantity = 1;
+    tx.set(orderRef, {
+      userId: user.uid,
+      items: [{ productId, name: p.name, price: p.price, quantity }],
+      totalPrice: p.price * quantity,
+      status: "paid",
+      createdAt: serverTimestamp()
+    });
+    tx.update(productRef, { stock: p.stock - quantity });
+    return { status: "ok", orderId: orderRef.id, stock: p.stock - quantity };
+  });
 }
 
 /* --- 「상품 올리기」: shop.js 의 p3~p6 을 한 번에 올린다 ---
