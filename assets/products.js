@@ -4,7 +4,7 @@
    긴 설명(detail)과 그림(emoji)은 그대로 shop.js 에서 읽습니다.
    =========================================================== */
 import {
-  getFirestore, collection, doc, query, where, orderBy, limit, getDocs, getDoc,
+  getFirestore, collection, doc, query, where, orderBy, limit, startAfter, getDocs, getDoc,
   writeBatch, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 import { auth, subscribeAuth } from "./auth.js";
@@ -13,14 +13,23 @@ const db = getFirestore(auth.app);
 
 // 숨기지 않은 상품만, 가격이 낮은 순서로, 3개까지 Firestore 쿼리에서 바로 읽는다
 // (isVisible + price 복합 색인이 있어야 동작한다)
-export async function loadProducts() {
-  const snap = await getDocs(query(
+// after 에 지난번 마지막 문서를 넘기면 그 다음부터 3개를 읽는다
+export async function loadProducts(after) {
+  const parts = [
     collection(db, "products"),
     where("isVisible", "==", true),
-    orderBy("price"),
-    limit(3)
-  ));
-  return { products: snap.docs.map(d => ({ id: d.id, ...d.data() })), reads: snap.size };
+    orderBy("price")
+  ];
+  if (after) parts.push(startAfter(after));
+  parts.push(limit(3));
+  const snap = await getDocs(query(...parts));
+  return {
+    products: snap.docs.map(d => ({ id: d.id, ...d.data() })),
+    reads: snap.size,
+    last: snap.docs[snap.docs.length - 1] || null,
+    // 3개를 다 못 채웠으면 더 가져올 것이 없다
+    hasMore: snap.size === 3
+  };
 }
 
 // 상품 한 장을 읽는다. 없는 상품이면 product 는 null

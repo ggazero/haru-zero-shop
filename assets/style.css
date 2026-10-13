@@ -60,6 +60,7 @@ table.cart tr:last-child td{border-bottom:0}
 
 .prose p{margin:0 0 16px}
 .empty{color:var(--sub);padding:52px 0;text-align:center}
+.more-box{text-align:center;margin:26px 0 0}
 
 form.pay{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:26px;max-width:480px}
 form.pay label{display:block;font-size:13px;color:var(--sub);margin:0 0 6px}

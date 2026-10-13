@@ -111,6 +111,43 @@ function showReads(n) {
 }
 
 /* --- 상품 목록 --- */
+const cardsHtml = products => products.map(p => `
+    <a class="card" href="product.html?id=${encodeURIComponent(p.id)}">
+      <div class="thumb">${findProduct(p.id) ? findProduct(p.id).emoji : ""}</div>
+      <h3>${esc(p.name)}</h3>
+      <p class="sum">${esc(p.summary)}</p>
+      <div class="price">${won(p.price)}</div>
+      <p class="stock">${stockText(p.stock)}</p>
+    </a>`).join("");
+
+// 지금 보이는 마지막 상품과 지금까지 읽은 문서 수
+let listState = null;
+function showMore(on) {
+  // .btn 의 display 가 hidden 을 덮으므로 버튼을 감싼 줄을 숨긴다
+  const line = document.querySelector("#more-box");
+  if (line) line.hidden = !on;
+}
+
+// 「더 보기」: 마지막 상품 다음부터 3개를 더 읽어 아래에 이어 붙인다
+async function paintMore() {
+  const box = document.querySelector("#product-list");
+  const button = document.querySelector("#more-button");
+  if (!box || !listState) return;
+  button.disabled = true;
+  try {
+    const list = await listState.mod.loadProducts(listState.last);
+    box.insertAdjacentHTML("beforeend", cardsHtml(list.products));
+    if (list.last) listState.last = list.last;
+    listState.reads += list.reads;
+    showReads(listState.reads);
+    showMore(list.hasMore);
+  } catch (error) {
+    console.error(error);
+  } finally {
+    button.disabled = false;
+  }
+}
+
 async function paintList() {
   const box = document.querySelector("#product-list");
   if (!box) return;
@@ -119,6 +156,12 @@ async function paintList() {
   document.querySelector("#hero-tagline").textContent = SHOP.tagline;
 
   box.innerHTML = '<p class="empty">상품을 불러오는 중입니다.</p>';
+  showMore(false);
+  const more = document.querySelector("#more-button");
+  if (more && !more.dataset.ready) {
+    more.dataset.ready = "1";
+    more.addEventListener("click", paintMore);
+  }
   let mod, list;
   try {
     mod = await import(PRODUCTS_MODULE);
@@ -130,15 +173,10 @@ async function paintList() {
     return;
   }
 
-  box.innerHTML = list.products.map(p => `
-    <a class="card" href="product.html?id=${encodeURIComponent(p.id)}">
-      <div class="thumb">${findProduct(p.id) ? findProduct(p.id).emoji : ""}</div>
-      <h3>${esc(p.name)}</h3>
-      <p class="sum">${esc(p.summary)}</p>
-      <div class="price">${won(p.price)}</div>
-      <p class="stock">${stockText(p.stock)}</p>
-    </a>`).join("");
-  showReads(list.reads);
+  box.innerHTML = cardsHtml(list.products);
+  listState = { last: list.last, reads: list.reads, mod };
+  showReads(listState.reads);
+  showMore(list.hasMore);
 
   const uploader = document.querySelector("#upload-box");
   if (uploader && !uploader.dataset.ready) {
