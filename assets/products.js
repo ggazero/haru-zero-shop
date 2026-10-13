@@ -11,9 +11,12 @@ import { auth, subscribeAuth } from "./auth.js";
 
 const db = getFirestore(auth.app);
 
-// 숨기지 않은 상품만, 가격이 낮은 순서로, 3개까지 Firestore 쿼리에서 바로 읽는다
+// 한 번에 읽는 상품 수
+const PAGE_SIZE = 2;
+
+// 숨기지 않은 상품만, 가격이 낮은 순서로, PAGE_SIZE 개까지 Firestore 쿼리에서 바로 읽는다
 // (isVisible + price 복합 색인이 있어야 동작한다)
-// after 에 지난번 마지막 문서를 넘기면 그 다음부터 3개를 읽는다
+// after 에 지난번 마지막 문서를 넘기면 그 다음부터 PAGE_SIZE 개를 읽는다
 export async function loadProducts(after) {
   const parts = [
     collection(db, "products"),
@@ -21,14 +24,14 @@ export async function loadProducts(after) {
     orderBy("price")
   ];
   if (after) parts.push(startAfter(after));
-  parts.push(limit(3));
+  parts.push(limit(PAGE_SIZE));
   const snap = await getDocs(query(...parts));
   return {
     products: snap.docs.map(d => ({ id: d.id, ...d.data() })),
     reads: snap.size,
     last: snap.docs[snap.docs.length - 1] || null,
-    // 3개를 다 못 채웠으면 더 가져올 것이 없다
-    hasMore: snap.size === 3
+    // PAGE_SIZE 개를 다 못 채웠으면 더 가져올 것이 없다
+    hasMore: snap.size === PAGE_SIZE
   };
 }
 
