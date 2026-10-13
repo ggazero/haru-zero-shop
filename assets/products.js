@@ -17,7 +17,7 @@ export async function loadProducts() {
   const snap = await getDocs(query(
     collection(db, "products"),
     where("isVisible", "==", true),
-    orderBy("price"),
+    orderBy("price", "desc"),
     limit(3)
   ));
   return { products: snap.docs.map(d => ({ id: d.id, ...d.data() })), reads: snap.size };
