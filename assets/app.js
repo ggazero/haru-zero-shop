@@ -97,39 +97,86 @@ function paintChrome() {
   if (foot) foot.textContent = SHOP.name + " · " + SHOP.tagline;
 }
 
+/* --- Firestore 에서 읽어 오는 상품 (assets/products.js) ---
+   이름 · 가격 · 한 줄 소개 · 재고는 Firestore products 컬렉션에서,
+   긴 설명(detail)과 그림(emoji)은 shop.js 에서 읽습니다. */
+const PRODUCTS_MODULE = new URL("products.js", document.currentScript.src).href;
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const stockText = n => n > 0 ? `재고 ${n}개` : "품절";
+const errorText = error => error.code ? `${error.code}: ${error.message}` : String(error.message || error);
+function showReads(n) {
+  const line = document.querySelector("#read-count");
+  if (line) line.textContent = `이번 화면에서 읽은 문서 ${n}장`;
+}
+
 /* --- 상품 목록 --- */
-function paintList() {
+async function paintList() {
   const box = document.querySelector("#product-list");
   if (!box) return;
 
   document.querySelector("#hero-title").textContent = SHOP.name;
   document.querySelector("#hero-tagline").textContent = SHOP.tagline;
 
-  box.innerHTML = PRODUCTS.map(p => `
-    <a class="card" href="product.html?id=${p.id}">
-      <div class="thumb">${p.emoji}</div>
-      <h3>${p.name}</h3>
-      <p class="sum">${p.summary}</p>
+  box.innerHTML = '<p class="empty">상품을 불러오는 중입니다.</p>';
+  let mod, list;
+  try {
+    mod = await import(PRODUCTS_MODULE);
+    list = await mod.loadProducts();
+  } catch (error) {
+    box.innerHTML = `<p class="empty">${esc(errorText(error))}</p>`;
+    return;
+  }
+
+  box.innerHTML = list.products.map(p => `
+    <a class="card" href="product.html?id=${encodeURIComponent(p.id)}">
+      <div class="thumb">${findProduct(p.id) ? findProduct(p.id).emoji : ""}</div>
+      <h3>${esc(p.name)}</h3>
+      <p class="sum">${esc(p.summary)}</p>
       <div class="price">${won(p.price)}</div>
+      <p class="stock">${stockText(p.stock)}</p>
     </a>`).join("");
+  showReads(list.reads);
+
+  const uploader = document.querySelector("#upload-box");
+  if (uploader && !uploader.dataset.ready) {
+    uploader.dataset.ready = "1";
+    // 올리기가 끝나면 목록을 다시 읽어 그린다
+    mod.mountUploader(uploader, paintList);
+  }
 }
 
 /* --- 상품 상세 --- */
-function paintDetail() {
+async function paintDetail() {
   const box = document.querySelector("#product-detail");
   if (!box) return;
 
-  const p = findProduct(qs("id"));
-  if (!p) { box.innerHTML = '<p class="empty">그런 상품이 없습니다.</p>'; return; }
+  const local = findProduct(qs("id"));
+  let found = { product: null, reads: 0 };
+  if (local) {
+    try {
+      const mod = await import(PRODUCTS_MODULE);
+      found = await mod.loadProduct(local.id);
+    } catch (error) {
+      box.innerHTML = `<p class="empty">${esc(errorText(error))}</p>`;
+      return;
+    }
+  }
+  showReads(found.reads);
+
+  if (!found.product) { box.innerHTML = '<p class="empty">그런 상품이 없습니다.</p>'; return; }
+  const p = { ...local, ...found.product };
 
   document.title = p.name + " — " + SHOP.name;
   box.innerHTML = `
     <div class="thumb">${p.emoji}</div>
     <div>
-      <h1>${p.name}</h1>
+      <h1>${esc(p.name)}</h1>
+      <p class="sum">${esc(p.summary)}</p>
       <div class="price">${won(p.price)}</div>
+      <p class="stock">${stockText(p.stock)}</p>
       <div class="body prose">${p.detail.map(t => `<p>${t}</p>`).join("")}</div>
-      <button class="btn" id="add-to-cart">장바구니에 담기</button>
+      <button class="btn" id="add-to-cart"${p.stock > 0 ? "" : " disabled"}>장바구니에 담기</button>
     </div>`;
 
   // 통로가 이미 있으면 그대로 쓰고, 없을 때만 새로 만든다

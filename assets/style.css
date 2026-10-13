@@ -210,3 +210,9 @@ footer.site .wrap::before{left:20px;top:6px;width:21px;height:11px;transform:rot
   .card,.btn{transition:none}
   .card:hover,.btn:hover{transform:none}
 }
+/* Firestore 재고 · 읽은 문서 수 · 상품 올리기 */
+.stock{color:var(--sub);font-size:13.5px;margin:6px 0 0}
+.detail .stock{margin:-14px 0 22px}
+.read-count{color:var(--sub);font-size:13.5px;margin:24px 0 0}
+.upload-box{margin:16px 0 0}
+.upload-result{margin:10px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
