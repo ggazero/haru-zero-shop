@@ -12,7 +12,7 @@ import { auth, subscribeAuth } from "./auth.js";
 const db = getFirestore(auth.app);
 
 // 한 번에 읽는 상품 수
-const PAGE_SIZE = 2;
+const PAGE_SIZE = 3;
 
 // 숨기지 않은 상품만, 가격이 낮은 순서로, PAGE_SIZE 개까지 Firestore 쿼리에서 바로 읽는다
 // (isVisible + price 복합 색인이 있어야 동작한다)

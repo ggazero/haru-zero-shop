@@ -128,7 +128,7 @@ function showMore(on) {
   if (line) line.hidden = !on;
 }
 
-// 「더 보기」: 마지막 상품 다음부터 2개를 더 읽어 아래에 이어 붙인다
+// 「더 보기」: 마지막 상품 다음부터 3개를 더 읽어 아래에 이어 붙인다
 async function paintMore() {
   const box = document.querySelector("#product-list");
   const button = document.querySelector("#more-button");
