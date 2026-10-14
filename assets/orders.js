@@ -4,7 +4,7 @@
    onSnapshot 으로 실시간으로 받는다. 정렬은 받은 뒤 여기서 한다.
    =========================================================== */
 import {
-  getFirestore, collection, query, where, onSnapshot
+  getFirestore, collection, query, where, onSnapshot, getDocs
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 import { auth, subscribeAuth } from "./auth.js";
 
@@ -12,6 +12,8 @@ const db = getFirestore(auth.app);
 const list = document.getElementById("order-list");
 const listStatus = document.getElementById("order-status");
 const listEnded = document.getElementById("order-ended");
+const endedBox = document.getElementById("order-ended-box");
+const recheck = document.getElementById("order-recheck");
 
 // 이 상태만 남으면 더 바뀔 주문이 없다고 보고 그만 듣는다
 const FINAL_STATUSES = ["delivered", "canceled"];
@@ -30,6 +32,17 @@ function stopListening() {
   listeningUid = null;
 }
 
+// 내 주문만 고르는 쿼리. 실시간 감지와 「다시 확인」이 같이 쓴다
+function myOrdersQuery(uid) {
+  return query(collection(db, "orders"), where("userId", "==", uid));
+}
+
+// 최근 주문이 위로. 시간이 없는 주문은 맨 위에
+function sortedOrders(snap) {
+  const time = order => order.createdAt ? order.createdAt.getTime() : Number.MAX_SAFE_INTEGER;
+  return snap.docs.map(orderFrom).sort((a, b) => time(b) - time(a));
+}
+
 // 주문이 1건 이상이고 전부 delivered 또는 canceled 이면 true
 function allFinished(snap) {
   return snap.size > 0 && snap.docs.every(d => FINAL_STATUSES.includes(d.data().status));
@@ -41,8 +54,26 @@ function finishListening(snap) {
   finishedUid = uid;
   console.log("[그만 듣기]", `주문 ${snap.size}건이 모두 delivered 또는 canceled 라 실시간 감지를 해제했습니다.`);
   listEnded.textContent = "모든 주문이 완료되어 실시간 업데이트를 종료했어요. 최신 주문 상태는 새로고침하여 확인해 주세요.";
-  listEnded.hidden = false;
+  endedBox.hidden = false;
 }
+
+// 그만 들은 뒤에만 보이는 버튼. getDocs 로 한 번만 읽고, 리스너는 다시 붙이지 않는다
+if (recheck) recheck.addEventListener("click", async () => {
+  const uid = finishedUid;
+  if (!uid) return;
+  recheck.disabled = true;
+  try {
+    const snap = await getDocs(myOrdersQuery(uid));
+    if (finishedUid !== uid) return;
+    console.log("[다시 확인]", `${snap.size}건`);
+    render(sortedOrders(snap));
+  } catch (error) {
+    console.error("[다시 확인] 오류", error);
+    listStatus.textContent = error.code || error.message;
+  } finally {
+    recheck.disabled = false;
+  }
+});
 
 // 서버 시간이 아직 안 들어온 새 주문은 추정 시간으로 보여 준다
 function orderFrom(d) {
@@ -88,17 +119,13 @@ function startListening(user) {
   if (listeningUid === user.uid || finishedUid === user.uid) return;
   stopListening();
   finishedUid = null;
-  listEnded.hidden = true;
+  endedBox.hidden = true;
   listeningUid = user.uid;
   listStatus.textContent = "주문을 불러오는 중입니다.";
-  const q = query(collection(db, "orders"), where("userId", "==", user.uid));
-  unsubscribe = onSnapshot(q, snap => {
+  unsubscribe = onSnapshot(myOrdersQuery(user.uid), snap => {
     const changes = snap.docChanges().map(c => `${c.type} ${c.doc.id} ${c.doc.data().status}`);
     console.log("[주문 알림]", `${snap.size}건`, changes);
-    // 최근 주문이 위로. 시간이 없는 주문은 맨 위에
-    const time = order => order.createdAt ? order.createdAt.getTime() : Number.MAX_SAFE_INTEGER;
-    const orders = snap.docs.map(orderFrom).sort((a, b) => time(b) - time(a));
-    render(orders);
+    render(sortedOrders(snap));
     if (allFinished(snap)) finishListening(snap);
   }, error => {
     console.error("[주문 알림] 오류", error);
@@ -111,7 +138,7 @@ if (list) subscribeAuth(user => {
   else {
     stopListening();
     finishedUid = null;
-    listEnded.hidden = true;
+    endedBox.hidden = true;
     list.replaceChildren();
   }
 });

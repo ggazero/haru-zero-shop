@@ -223,3 +223,6 @@ footer.site .wrap::before{left:20px;top:6px;width:21px;height:11px;transform:rot
 .order-item{display:flex;flex-wrap:wrap;gap:6px 16px;padding:12px 0;border-bottom:1px solid var(--line)}
 .order-names{flex:1 1 160px;overflow-wrap:anywhere}
 .order-date,.order-state{color:var(--sub);font-size:13.5px}
+.order-ended{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:16px 0 0}
+.order-ended[hidden]{display:none}
+.order-ended p{margin:0;flex:1 1 240px}
