@@ -14,6 +14,10 @@ const listStatus = document.getElementById("order-status");
 const listEnded = document.getElementById("order-ended");
 const endedBox = document.getElementById("order-ended-box");
 const recheck = document.getElementById("order-recheck");
+const toast = document.getElementById("order-toast");
+
+// 상태가 바뀌었다는 알림을 보여 두는 시간
+const TOAST_MS = 5000;
 
 // 이 상태만 남으면 더 바뀔 주문이 없다고 보고 그만 듣는다
 const FINAL_STATUSES = ["delivered", "canceled"];
@@ -36,10 +40,42 @@ let unsubscribe = null;
 let listeningUid = null;
 let finishedUid = null;
 
+// 주문 id → 직전에 받은 status. 첫 스냅샷에서 채우고, modified 때 비교한다
+let knownStatuses = null;
+let toastTimer = null;
+
+// 알림 칸(role="status")은 늘 화면에 두고 안의 글만 넣었다 뺀다. 그래야 화면 낭독기가 읽는다
+function showStatusToast() {
+  if (!toast) return;
+  clearTimeout(toastTimer);
+  const message = document.createElement("span");
+  message.className = "order-toast-message";
+  message.textContent = "주문 상태가 바뀌었습니다";
+  toast.replaceChildren(message);
+  toastTimer = setTimeout(() => toast.replaceChildren(), TOAST_MS);
+}
+
+// 첫 스냅샷(전부 added)은 기억만 하고 알리지 않는다.
+// 그다음부터 modified 중에 status 값이 실제로 달라진 주문이 있으면 true
+function statusChanged(snap) {
+  const first = knownStatuses === null;
+  if (first) knownStatuses = new Map();
+  let changed = false;
+  snap.docChanges().forEach(c => {
+    const status = c.doc.data().status;
+    if (c.type === "removed") { knownStatuses.delete(c.doc.id); return; }
+    if (!first && c.type === "modified" && knownStatuses.has(c.doc.id) &&
+        knownStatuses.get(c.doc.id) !== status) changed = true;
+    knownStatuses.set(c.doc.id, status);
+  });
+  return changed;
+}
+
 function stopListening() {
   if (unsubscribe) unsubscribe();
   unsubscribe = null;
   listeningUid = null;
+  knownStatuses = null;
 }
 
 // 내 주문만 고르는 쿼리. 실시간 감지와 「다시 확인」이 같이 쓴다
@@ -158,6 +194,7 @@ function startListening(user) {
     const changes = snap.docChanges().map(c => `${c.type} ${c.doc.id} ${c.doc.data().status}`);
     console.log("[주문 알림]", `${snap.size}건`, changes);
     render(sortedOrders(snap));
+    if (statusChanged(snap)) showStatusToast();
     if (allFinished(snap)) finishListening(snap);
   }, error => {
     console.error("[주문 알림] 오류", error);
