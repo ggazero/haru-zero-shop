@@ -226,3 +226,23 @@ footer.site .wrap::before{left:20px;top:6px;width:21px;height:11px;transform:rot
 .order-ended{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:16px 0 0}
 .order-ended[hidden]{display:none}
 .order-ended p{margin:0;flex:1 1 240px}
+/* 주문 진행 단계: 지난 단계는 채우고 지금 단계는 굵게 */
+.order-progress{flex:1 1 100%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  list-style:none;padding:0;margin:4px 0 0}
+.order-progress li{position:relative;padding:22px 2px 0;text-align:center;
+  font-size:12.5px;line-height:1.4;color:var(--sub)}
+.order-progress li::before{content:"";position:absolute;z-index:1;top:4px;left:50%;
+  width:14px;height:14px;margin-left:-7px;border-radius:50%;
+  background:var(--card);border:2px solid var(--line)}
+.order-progress li::after{content:"";position:absolute;top:10px;left:-50%;width:100%;height:2px;background:var(--line)}
+.order-progress li:first-child::after{display:none}
+.order-progress .is-done::before{background:var(--accent);border-color:var(--accent)}
+.order-progress .is-done::after,.order-progress .is-current::after{background:var(--accent)}
+.order-progress .is-current{color:var(--ink);font-weight:700}
+.order-progress .is-current::before{background:var(--accent);border-color:var(--accent);
+  box-shadow:0 0 0 4px #78826838}
+.order-state.is-canceled{display:inline-block;padding:0 10px;border:1px solid #b59d78;
+  border-radius:3px;background:#f8f0de;color:var(--ink)}
+@media(max-width:480px){
+  .order-progress li{font-size:11.5px;padding-top:20px}
+}

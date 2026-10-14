@@ -18,6 +18,16 @@ const recheck = document.getElementById("order-recheck");
 // 이 상태만 남으면 더 바뀔 주문이 없다고 보고 그만 듣는다
 const FINAL_STATUSES = ["delivered", "canceled"];
 
+// 화면에는 영어 status 대신 이 한글 문구를 쓴다. step 이 없으면 진행 단계를 그리지 않는다
+const STATUS_VIEW = {
+  paid: { label: "결제 확인", step: 1 },
+  preparing: { label: "상품 준비", step: 2 },
+  shipped: { label: "배송 출발", step: 3 },
+  delivered: { label: "배송 완료", step: 4 },
+  canceled: { label: "주문 취소" }
+};
+const STEP_LABELS = ["결제 확인", "상품 준비", "배송 출발", "배송 완료"];
+
 const won = n => Number(n || 0).toLocaleString("ko-KR") + "원";
 
 // 리스너는 한 번에 하나만. 같은 사람이면 다시 붙이지 않는다
@@ -87,6 +97,32 @@ function orderFrom(d) {
   };
 }
 
+// 진행 단계 4칸. 지난 단계는 채우고, 지금 단계는 강조한다.
+// 주문 취소는 단계 없이 문구만, 모르는 값은 「확인 중」
+function statusView(status) {
+  const view = Object.hasOwn(STATUS_VIEW, status) ? STATUS_VIEW[status] : null;
+  if (!view || !view.step) {
+    const state = document.createElement("span");
+    state.className = view ? "order-state is-canceled" : "order-state";
+    state.textContent = view ? view.label : "확인 중";
+    return state;
+  }
+  const steps = document.createElement("ol");
+  steps.className = "order-progress";
+  steps.setAttribute("aria-label", `배송 진행 ${view.step}/4단계: ${view.label}`);
+  STEP_LABELS.forEach((label, i) => {
+    const li = document.createElement("li");
+    li.textContent = label;
+    if (i + 1 < view.step) li.className = "is-done";
+    else if (i + 1 === view.step) {
+      li.className = "is-current";
+      li.setAttribute("aria-current", "step");
+    }
+    steps.append(li);
+  });
+  return steps;
+}
+
 function render(orders) {
   if (!orders.length) {
     list.replaceChildren();
@@ -106,11 +142,7 @@ function render(orders) {
     const total = document.createElement("span");
     total.className = "order-total";
     total.textContent = won(order.totalPrice);
-    // status 는 Firestore 에 저장된 영어 값 그대로
-    const state = document.createElement("span");
-    state.className = "order-state";
-    state.textContent = order.status ?? "-";
-    li.append(date, names, total, state);
+    li.append(date, names, total, statusView(order.status));
     return li;
   }));
 }
