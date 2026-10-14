@@ -4,7 +4,7 @@
    onSnapshot 으로 실시간으로 받는다. 정렬은 받은 뒤 여기서 한다.
    =========================================================== */
 import {
-  getFirestore, collection, query, where, onSnapshot, getDocs
+  getFirestore, collection, doc, query, where, onSnapshot, getDocs, runTransaction
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 import { auth, subscribeAuth } from "./auth.js";
 
@@ -15,6 +15,9 @@ const listEnded = document.getElementById("order-ended");
 const endedBox = document.getElementById("order-ended-box");
 const recheck = document.getElementById("order-recheck");
 const toast = document.getElementById("order-toast");
+const actionStatus = document.getElementById("order-action-status");
+
+const CANCEL_FAILED = "주문 취소를 완료하지 못했어요. 주문은 기존 상태로 유지되고 있습니다. 현재 주문 상태를 확인한 후 다시 시도해 주세요.";
 
 // 상태가 바뀌었다는 알림을 보여 두는 시간
 const TOAST_MS = 5000;
@@ -159,7 +162,56 @@ function statusView(status) {
   return steps;
 }
 
+// 지금 화면에 그린 주문과, 취소를 저장하는 중인 주문 id
+let shownOrders = [];
+const canceling = new Set();
+
+// status 가 정확히 paid 인 주문에만 붙는 버튼. 저장 중이면 다시 그려도 「저장 중」으로 잠가 둔다
+function cancelButton(order) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "btn ghost order-cancel";
+  const saving = canceling.has(order.id);
+  button.disabled = saving;
+  button.textContent = saving ? "저장 중" : "주문 취소";
+  button.addEventListener("click", () => cancelOrder(order.id, button));
+  return button;
+}
+
+// 트랜잭션 안에서 주문을 다시 읽어, 내 주문이고 아직 paid 일 때만 status 하나를 canceled 로 바꾼다.
+// 실패하면 Firestore 는 그대로이고, 화면도 원래 상태로 다시 그린다
+async function cancelOrder(orderId, button) {
+  const user = auth.currentUser;
+  if (!user || canceling.has(orderId)) return;
+  canceling.add(orderId);
+  button.disabled = true;
+  button.textContent = "저장 중";
+  if (actionStatus) actionStatus.textContent = "";
+  const ref = doc(db, "orders", orderId);
+  try {
+    await runTransaction(db, async tx => {
+      const snap = await tx.get(ref);
+      if (!snap.exists()) throw new Error(`orders/${orderId} 문서가 없습니다.`);
+      const data = snap.data();
+      if (data.userId !== user.uid) throw new Error("로그인한 사람의 주문이 아닙니다.");
+      if (data.status !== "paid") throw new Error(`paid 가 아닌 주문은 취소하지 않습니다: ${data.status}`);
+      tx.update(ref, { status: "canceled" });
+    });
+    canceling.delete(orderId);
+    // 리스너가 붙어 있으면 스냅샷이 화면을 고친다. 이미 그만 들었으면(다시 확인으로 본 목록) 여기서 고친다
+    if (!unsubscribe) {
+      render(shownOrders.map(o => o.id === orderId ? { ...o, status: "canceled" } : o));
+    }
+  } catch (error) {
+    console.error("[주문 취소] 실패", error);
+    canceling.delete(orderId);
+    if (actionStatus) actionStatus.textContent = CANCEL_FAILED;
+    render(shownOrders);
+  }
+}
+
 function render(orders) {
+  shownOrders = orders;
   if (!orders.length) {
     list.replaceChildren();
     listStatus.textContent = "아직 주문이 없습니다.";
@@ -178,7 +230,9 @@ function render(orders) {
     const total = document.createElement("span");
     total.className = "order-total";
     total.textContent = won(order.totalPrice);
-    li.append(date, names, total, statusView(order.status));
+    li.append(date, names, total);
+    if (order.status === "paid") li.append(cancelButton(order));
+    li.append(statusView(order.status));
     return li;
   }));
 }
@@ -208,6 +262,8 @@ if (list) subscribeAuth(user => {
     stopListening();
     finishedUid = null;
     endedBox.hidden = true;
+    if (actionStatus) actionStatus.textContent = "";
+    shownOrders = [];
     list.replaceChildren();
   }
 });
