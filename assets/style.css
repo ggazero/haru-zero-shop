@@ -217,3 +217,9 @@ footer.site .wrap::before{left:20px;top:6px;width:21px;height:11px;transform:rot
 .read-count{color:var(--sub);font-size:13.5px;margin:24px 0 0}
 .upload-box{margin:16px 0 0}
 .upload-result{margin:10px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+/* 마이페이지 내 주문 */
+.my-orders{margin:32px 0 0}
+.order-list{list-style:none;padding:0;margin:12px 0 0}
+.order-item{display:flex;flex-wrap:wrap;gap:6px 16px;padding:12px 0;border-bottom:1px solid var(--line)}
+.order-names{flex:1 1 160px;overflow-wrap:anywhere}
+.order-date,.order-state{color:var(--sub);font-size:13.5px}
