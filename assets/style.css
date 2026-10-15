@@ -219,6 +219,9 @@ footer.site .wrap::before{left:20px;top:6px;width:21px;height:11px;transform:rot
    (모바일의 height:120px 보다 이 규칙이 우선한다) */
 .card .thumb.photo{height:auto;aspect-ratio:1/1;overflow:hidden}
 .card .thumb.photo img{display:block;width:100%;height:100%;object-fit:contain}
+/* 상세 화면의 사진 칸도 1:1로 두고 잘리지 않게 전체를 보여 준다 */
+.detail .thumb.photo{padding:0;aspect-ratio:1/1;overflow:hidden}
+.detail .thumb.photo img{display:block;width:100%;height:100%;object-fit:contain}
 .upload-box{margin:16px 0 0}
 .upload-result{margin:10px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
 /* 마이페이지 내 주문 */

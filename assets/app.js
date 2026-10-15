@@ -211,9 +211,10 @@ async function paintDetail() {
 
   const local = findProduct(qs("id"));
   let found = { product: null, reads: 0 };
+  let mod;
   if (local) {
     try {
-      const mod = await import(PRODUCTS_MODULE);
+      mod = await import(PRODUCTS_MODULE);
       found = await mod.loadProduct(local.id);
     } catch (error) {
       box.innerHTML = `<p class="empty">${esc(errorText(error))}</p>`;
@@ -238,6 +239,19 @@ async function paintDetail() {
       <button class="btn ghost" id="buy-now" type="button">바로 주문</button>
       <p class="order-result" id="order-result" role="status"></p>
     </div>`;
+
+  // imagePath 가 있으면 다운로드 URL을 받아 그림 글자 대신 사진을 넣는다
+  // 사진을 못 받으면 그림 글자를 그대로 둔다 (읽은 문서 수에는 더하지 않는다)
+  if (p.imagePath) {
+    const thumb = box.querySelector(".thumb");
+    mod.loadImageUrl(p.imagePath).then(url => {
+      const img = document.createElement("img");
+      img.src = url;
+      img.alt = p.name;
+      thumb.replaceChildren(img);
+      thumb.classList.add("photo");
+    }).catch(error => console.error(error));
+  }
 
   // 통로가 이미 있으면 그대로 쓰고, 없을 때만 새로 만든다
   window.dataLayer = window.dataLayer || [];
