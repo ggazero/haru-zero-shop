@@ -113,12 +113,28 @@ function showReads(n) {
 /* --- 상품 목록 --- */
 const cardsHtml = products => products.map(p => `
     <a class="card" href="product.html?id=${encodeURIComponent(p.id)}">
-      <div class="thumb">${findProduct(p.id) ? findProduct(p.id).emoji : ""}</div>
+      <div class="thumb"${p.imagePath ? ` data-image-path="${esc(p.imagePath)}"` : ""}>${findProduct(p.id) ? findProduct(p.id).emoji : ""}</div>
       <h3>${esc(p.name)}</h3>
       <p class="sum">${esc(p.summary)}</p>
       <div class="price">${won(p.price)}</div>
       <p class="stock">${stockText(p.stock)}</p>
     </a>`).join("");
+
+// imagePath 가 있는 카드는 다운로드 URL을 받아 그림 글자 대신 사진을 넣는다
+// 사진을 못 받으면 그림 글자를 그대로 둔다 (읽은 문서 수에는 더하지 않는다)
+function paintImages(box, mod) {
+  box.querySelectorAll(".thumb[data-image-path]").forEach(thumb => {
+    const path = thumb.dataset.imagePath;
+    thumb.removeAttribute("data-image-path");
+    mod.loadImageUrl(path).then(url => {
+      const img = document.createElement("img");
+      img.src = url;
+      img.alt = thumb.closest(".card").querySelector("h3").textContent;
+      thumb.replaceChildren(img);
+      thumb.classList.add("photo");
+    }).catch(error => console.error(error));
+  });
+}
 
 // 지금 보이는 마지막 상품과 지금까지 읽은 문서 수
 let listState = null;
@@ -137,6 +153,7 @@ async function paintMore() {
   try {
     const list = await listState.mod.loadProducts(listState.last);
     box.insertAdjacentHTML("beforeend", cardsHtml(list.products));
+    paintImages(box, listState.mod);
     if (list.last) listState.last = list.last;
     listState.reads += list.reads;
     showReads(listState.reads);
@@ -174,7 +191,8 @@ async function paintList() {
   }
 
   box.innerHTML = cardsHtml(list.products);
-  listState = { last: list.last, reads: list.reads, mod };
+  paintImages(box, mod);
+  listState ={ last: list.last, reads: list.reads, mod };
   showReads(listState.reads);
   showMore(list.hasMore);
 

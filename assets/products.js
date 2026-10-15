@@ -7,9 +7,17 @@ import {
   getFirestore, collection, doc, query, where, orderBy, limit, startAfter, getDocs, getDoc,
   writeBatch, serverTimestamp, runTransaction
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-storage.js";
 import { auth, authReady, subscribeAuth } from "./auth.js";
 
 const db = getFirestore(auth.app);
+const storage = getStorage(auth.app);
+
+// 상품 문서의 imagePath(Storage 경로)로 사진 다운로드 URL을 받는다
+// Firestore 문서를 읽는 것이 아니므로 읽은 문서 수에 더하지 않는다
+export function loadImageUrl(imagePath) {
+  return getDownloadURL(ref(storage, imagePath));
+}
 
 // 한 번에 읽는 상품 수
 const PAGE_SIZE = 3;
