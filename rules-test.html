@@ -8,14 +8,25 @@
 <link rel="stylesheet" href="assets/style.css">
 <link rel="stylesheet" href="assets/auth.css">
 <style>
-  .rt-panel { max-width:640px; padding:18px 20px; margin:16px 0; background:var(--card);
-    border:1px solid var(--line); border-radius:4px; }
+  /* 카드는 .wrap(최대 1040px) 폭을 채우고, 넓은 화면에서는 2열로 자연스럽게 배치 */
+  .rt-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:16px; margin:16px 0; }
+  .rt-panel { padding:18px 20px; background:var(--card); border:1px solid var(--line); border-radius:4px; }
+  .rt-panel.rt-wide { grid-column:1 / -1; }
   .rt-panel h2 { margin-top:0; font-size:18px; }
   .rt-id dt { color:var(--sub); font-size:13px; }
   .rt-id dd { margin:0 0 10px; overflow-wrap:anywhere; font-family:monospace; }
   .rt-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; align-items:center; }
   .rt-result { min-height:1.6em; margin:10px 0 0; overflow-wrap:anywhere; }
   .rt-note { color:var(--sub); font-size:13px; }
+  /* 읽기 결과 표: 좁은 화면에서는 가로 스크롤 */
+  .rt-table-wrap { overflow-x:auto; margin-top:10px; }
+  table.rt-table { border-collapse:collapse; width:100%; font-size:13px; }
+  table.rt-table th, table.rt-table td { border:1px solid var(--line); padding:6px 8px; text-align:left;
+    white-space:nowrap; font-family:monospace; }
+  table.rt-table th { background:#f3efe4; }
+  table.rt-table td.rt-mine { color:var(--sub); }
+  table.rt-table td.rt-other { color:#9a3412; font-weight:600; }
+  @media (max-width:560px) { .rt-grid { grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
@@ -33,49 +44,58 @@
   <h1>보안 규칙 점검</h1>
   <p class="lead">
     로그인한 계정으로 보안 규칙이 <code>orders</code>·<code>products</code>의 읽기/쓰기를
-    어디까지 허용하는지 확인하는 테스트 화면입니다. 보안 규칙과 실제 주문·상품 데이터는
-    변경하지 않으며, 쓰기 테스트는 확인 후 연습 문서에만 실행하고 끝나면 삭제해 원복합니다.
+    어디까지 허용하는지 확인하는 테스트 화면입니다. 쓰기 테스트는 실제 데이터를 대상으로 하며,
+    버튼을 누르고 확인 창에서 명시적으로 동의하기 전에는 절대 실행되지 않습니다. Firebase 보안 규칙은
+    변경하지 않습니다.
   </p>
 
-  <!-- 1) 신원 + 로그인 -->
-  <section class="rt-panel" aria-labelledby="rt-id-title">
-    <h2 id="rt-id-title">로그인 정보</h2>
-    <dl class="rt-id">
-      <dt>로그인 상태</dt><dd id="rt-login-status">확인 중…</dd>
-      <dt>이메일</dt><dd id="rt-email">-</dd>
-      <dt>UID</dt><dd id="rt-uid">-</dd>
-    </dl>
-    <p class="rt-note">로그인·가입은 기존 로그인 화면에서 처리합니다. 로그인 후 이 페이지로 돌아와 주세요.</p>
-    <div class="rt-actions">
-      <a class="btn" id="rt-login-link" href="login.html?next=rules-test.html" hidden>로그인 화면으로 이동</a>
-      <button class="btn ghost" id="rt-logout" type="button" hidden>로그아웃</button>
-    </div>
-    <p class="rt-result" id="rt-auth-msg" role="status" aria-live="polite"></p>
-  </section>
+  <div class="rt-grid">
+    <!-- 1) 신원 + 로그인 -->
+    <section class="rt-panel rt-wide" aria-labelledby="rt-id-title">
+      <h2 id="rt-id-title">로그인 정보</h2>
+      <dl class="rt-id">
+        <dt>로그인 상태</dt><dd id="rt-login-status">확인 중…</dd>
+        <dt>이메일</dt><dd id="rt-email">-</dd>
+        <dt>UID</dt><dd id="rt-uid">-</dd>
+      </dl>
+      <p class="rt-note">로그인·가입은 기존 로그인 화면에서 처리합니다. 로그인하면 이 페이지로 자동으로 돌아옵니다.</p>
+      <div class="rt-actions">
+        <a class="btn" id="rt-login-link" href="login.html?next=rules-test.html" hidden>로그인 화면으로 이동</a>
+      </div>
+    </section>
 
-  <!-- 2) 주문 전체 읽기 -->
-  <section class="rt-panel" aria-labelledby="rt-read-title">
-    <h2 id="rt-read-title">① 주문 전체 읽기</h2>
-    <p class="rt-note">orders 컬렉션 전체를 읽기 전용으로 조회합니다. 문서 수와 타인 주문 존재 여부만 표시합니다.</p>
-    <button class="btn" id="rt-read" type="button" disabled>주문 전체 읽기 시도</button>
-    <p class="rt-result" id="rt-read-result" role="status" aria-live="polite">아직 시도하지 않았습니다.</p>
-  </section>
+    <!-- 2) 주문 전체 읽기 -->
+    <section class="rt-panel rt-wide" aria-labelledby="rt-read-title">
+      <h2 id="rt-read-title">① 주문 전체 읽기</h2>
+      <p class="rt-note">orders 컬렉션 전체를 읽기 전용으로 조회합니다. 전체/타인 주문 건수와 함께 각 주문의 문서 ID·userId·totalPrice 를 표로 표시합니다.</p>
+      <button class="btn" id="rt-read" type="button" disabled>주문 전체 읽기</button>
+      <div class="rt-result" id="rt-read-result" role="status" aria-live="polite">아직 시도하지 않았습니다.</div>
+    </section>
 
-  <!-- 3) 주문 금액 쓰기 -->
-  <section class="rt-panel" aria-labelledby="rt-order-title">
-    <h2 id="rt-order-title">② 내 주문 금액 고치기</h2>
-    <p class="rt-note">연습용 주문 문서를 만들어 금액 쓰기를 시험한 뒤 삭제(원복)합니다. 실제 주문은 건드리지 않습니다.</p>
-    <button class="btn" id="rt-write-order" type="button" disabled>주문 금액 쓰기 시도</button>
-    <p class="rt-result" id="rt-write-order-result" role="status" aria-live="polite">아직 시도하지 않았습니다.</p>
-  </section>
+    <!-- 3) 내 주문 금액 고치기 -->
+    <section class="rt-panel" aria-labelledby="rt-order-title">
+      <h2 id="rt-order-title">② 내 주문 금액 고치기</h2>
+      <p class="rt-note">
+        내 기존 주문 1건의 <code>totalPrice</code> 를 <strong>1</strong> 로 바꾸는 쓰기 테스트입니다.
+        버튼을 누르면 먼저 대상 주문과 원래 값을 읽어 보여 주고, 확인 창에 동의해야만 실제로 씁니다.
+        쓰기 성공 시 곧바로 원래 값으로 자동 복구를 시도하며, 복구에 실패하면 원래 값을 화면에 남겨 수동 복구할 수 있게 합니다.
+      </p>
+      <button class="btn" id="rt-write-order" type="button" disabled>내 주문 금액 고치기</button>
+      <div class="rt-result" id="rt-write-order-result" role="status" aria-live="polite">아직 시도하지 않았습니다.</div>
+    </section>
 
-  <!-- 4) 상품 가격 0원 쓰기 -->
-  <section class="rt-panel" aria-labelledby="rt-product-title">
-    <h2 id="rt-product-title">③ 상품 가격 0원으로</h2>
-    <p class="rt-note">진열되지 않는 연습 상품(isVisible:false)을 만들어 가격 0원 쓰기를 시험한 뒤 삭제(원복)합니다. 실제 상품은 건드리지 않습니다.</p>
-    <button class="btn" id="rt-write-product" type="button" disabled>상품 가격 0원 쓰기 시도</button>
-    <p class="rt-result" id="rt-write-product-result" role="status" aria-live="polite">아직 시도하지 않았습니다.</p>
-  </section>
+    <!-- 4) 상품 가격 0원으로 -->
+    <section class="rt-panel" aria-labelledby="rt-product-title">
+      <h2 id="rt-product-title">③ 상품 가격 0원으로</h2>
+      <p class="rt-note">
+        <code>products/p1</code> 의 <code>price</code> 를 <strong>0</strong> 으로 바꾸는 쓰기 테스트입니다.
+        p1 은 실제 진열 상품이므로, 버튼을 누르면 먼저 원래 값을 읽어 보여 주고 확인 창에 동의해야만 실제로 씁니다.
+        쓰기 성공 시 곧바로 원래 값으로 자동 복구를 시도하며, 복구에 실패하면 원래 값을 화면에 남겨 수동 복구할 수 있게 합니다.
+      </p>
+      <button class="btn" id="rt-write-product" type="button" disabled>상품 가격 0원으로</button>
+      <div class="rt-result" id="rt-write-product-result" role="status" aria-live="polite">아직 시도하지 않았습니다.</div>
+    </section>
+  </div>
 </div></main>
 <footer class="site"><div class="wrap"></div></footer>
 <script src="assets/shop.js"></script>
