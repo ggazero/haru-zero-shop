@@ -27,8 +27,10 @@ export function subscribeAuth(listener) {
   if (ready) listener(currentUser);
   return () => listeners.delete(listener);
 }
+const RETURN_PATHS = ["mypage.html", "rules-test.html"];
 export function loginReturnPath() {
-  return new URLSearchParams(location.search).get("next") === "mypage.html" ? "mypage.html" : null;
+  const next = new URLSearchParams(location.search).get("next");
+  return RETURN_PATHS.includes(next) ? next : null;
 }
 export async function logoutToHome() {
   await signOut(auth);
