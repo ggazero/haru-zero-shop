@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>보안 규칙 점검 · 하루상점</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/auth.css">
+</head>
+<body>
+<header class="site"><div class="wrap">
+  <a class="brand" href="index.html">작은상점</a>
+  <nav class="site">
+    <a href="index.html">상품</a>
+    <a href="about.html">가게 소개</a>
+    <a href="shipping.html">배송·교환</a>
+    <a href="cart.html">장바구니<span class="cart-count">0</span></a>
+  </nav>
+</div></header>
+
+<main><div class="wrap">
+  <h1>보안 규칙 점검 — orders 전체 읽기</h1>
+  <p class="lead">
+    로그인한 계정으로 <code>orders</code> 컬렉션 전체를 읽어, 보안 규칙이
+    남의 주문까지 내어 주는지 확인하는 테스트 화면입니다.
+    개인정보와 주문 상세는 표시하지 않고, 문서 수와 타인 주문 존재 여부만 보여 줍니다.
+  </p>
+
+  <p id="rules-test-login" role="status" aria-live="polite"></p>
+
+  <p>
+    <button class="btn" id="rules-test-run" type="button" disabled>주문 전체 읽기 시도</button>
+  </p>
+
+  <section aria-labelledby="rules-test-result-title">
+    <h2 id="rules-test-result-title">결과</h2>
+    <p id="rules-test-result" role="status" aria-live="polite">아직 시도하지 않았습니다.</p>
+  </section>
+</div></main>
+<footer class="site"><div class="wrap"></div></footer>
+<script src="assets/shop.js"></script>
+<script src="assets/app.js"></script>
+<script type="module" src="assets/auth-ui.js"></script>
+<script type="module" src="assets/rules-test.js"></script>
+</body>
+</html>
