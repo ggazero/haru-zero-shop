@@ -13,10 +13,7 @@
   .rt-panel h2 { margin-top:0; font-size:18px; }
   .rt-id dt { color:var(--sub); font-size:13px; }
   .rt-id dd { margin:0 0 10px; overflow-wrap:anywhere; font-family:monospace; }
-  .rt-form { display:flex; flex-wrap:wrap; gap:10px; align-items:end; }
-  .rt-form label { display:flex; flex-direction:column; font-size:13px; gap:4px; }
-  .rt-form input { padding:8px; border:1px solid var(--line); border-radius:4px; }
-  .rt-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .rt-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; align-items:center; }
   .rt-result { min-height:1.6em; margin:10px 0 0; overflow-wrap:anywhere; }
   .rt-note { color:var(--sub); font-size:13px; }
 </style>
@@ -48,20 +45,9 @@
       <dt>이메일</dt><dd id="rt-email">-</dd>
       <dt>UID</dt><dd id="rt-uid">-</dd>
     </dl>
-    <form class="rt-form" id="rt-login-form" hidden novalidate onsubmit="return false">
-      <label>이메일
-        <input id="rt-email-input" type="email" autocomplete="username">
-      </label>
-      <label>비밀번호
-        <input id="rt-password-input" type="password" autocomplete="current-password">
-      </label>
-      <div class="rt-actions">
-        <button class="btn" id="rt-signin" type="button">로그인</button>
-        <button class="btn ghost" id="rt-signup" type="button">가입</button>
-        <button class="btn ghost" id="rt-google" type="button">Google로 로그인</button>
-      </div>
-    </form>
+    <p class="rt-note">로그인·가입은 기존 로그인 화면에서 처리합니다. 로그인 후 이 페이지로 돌아와 주세요.</p>
     <div class="rt-actions">
+      <a class="btn" id="rt-login-link" href="login.html" hidden>로그인 화면으로 이동</a>
       <button class="btn ghost" id="rt-logout" type="button" hidden>로그아웃</button>
     </div>
     <p class="rt-result" id="rt-auth-msg" role="status" aria-live="polite"></p>

@@ -11,15 +11,14 @@
        끝나면 그 문서를 지워 원래 상태(존재하지 않음)로 되돌린다.
      - 실제 상품에 영향이 없도록 연습 상품은 isVisible:false 로 만든다(진열 제외).
      - 개인정보·주문 상세는 읽기 결과에 표시하지 않는다(건수와 존재 여부만).
+   로그인/로그아웃은 기존 기능을 재사용한다(중복 구현하지 않음):
+     - 로그인: 기존 login.html 로 이동해서 처리한다.
+     - 로그아웃: auth.js 가 내보내는 logoutToHome() 를 그대로 쓴다.
    =========================================================== */
 import {
   getFirestore, collection, doc, getDocs, getDoc, setDoc, updateDoc, deleteDoc
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
-import {
-  signInWithEmailAndPassword, createUserWithEmailAndPassword,
-  signInWithPopup, GoogleAuthProvider, signOut
-} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
-import { auth, subscribeAuth } from "./auth.js";
+import { auth, subscribeAuth, logoutToHome } from "./auth.js";
 
 const db = getFirestore(auth.app);
 
@@ -28,12 +27,7 @@ const $ = id => document.getElementById(id);
 const statusEl = $("rt-login-status");
 const emailOut = $("rt-email");
 const uidOut = $("rt-uid");
-const loginForm = $("rt-login-form");
-const emailIn = $("rt-email-input");
-const pwIn = $("rt-password-input");
-const signinBtn = $("rt-signin");
-const signupBtn = $("rt-signup");
-const googleBtn = $("rt-google");
+const loginLink = $("rt-login-link");
 const logoutBtn = $("rt-logout");
 const authMsg = $("rt-auth-msg");
 
@@ -46,59 +40,33 @@ const productOut = $("rt-write-product-result");
 
 let currentUser = null;
 
-// ====== 신원 표시 + 로그인/로그아웃 ======
+function authErr(error) {
+  return error && (error.code || error.message) || String(error);
+}
+
+// ====== 1) 신원 표시 + 로그인/로그아웃(기존 기능 재사용) ======
 subscribeAuth(user => {
   currentUser = user;
   if (user) {
     statusEl.textContent = "로그인됨";
     emailOut.textContent = user.email || "(이메일 없음)";
     uidOut.textContent = user.uid;
-    loginForm.hidden = true;
+    loginLink.hidden = true;
     logoutBtn.hidden = false;
     [readBtn, orderBtn, productBtn].forEach(b => b.disabled = false);
   } else {
     statusEl.textContent = "로그아웃 상태";
     emailOut.textContent = "-";
     uidOut.textContent = "-";
-    loginForm.hidden = false;
+    loginLink.hidden = false;
     logoutBtn.hidden = true;
     [readBtn, orderBtn, productBtn].forEach(b => b.disabled = true);
   }
 });
 
-function authErr(error) {
-  return error && (error.code || error.message) || String(error);
-}
-
-// 로그인/가입은 이 페이지 안에서 처리한다 → 끝나면 그대로 이 페이지에 머문다(복귀 불필요)
-signinBtn.addEventListener("click", async () => {
-  authMsg.textContent = "로그인 중…";
-  try {
-    await signInWithEmailAndPassword(auth, emailIn.value.trim(), pwIn.value);
-    pwIn.value = "";
-    authMsg.textContent = "로그인되었습니다.";
-  } catch (error) { authMsg.textContent = `로그인 실패: ${authErr(error)}`; }
-});
-
-signupBtn.addEventListener("click", async () => {
-  authMsg.textContent = "가입 중…";
-  try {
-    await createUserWithEmailAndPassword(auth, emailIn.value.trim(), pwIn.value);
-    pwIn.value = "";
-    authMsg.textContent = "가입 및 로그인되었습니다.";
-  } catch (error) { authMsg.textContent = `가입 실패: ${authErr(error)}`; }
-});
-
-googleBtn.addEventListener("click", async () => {
-  // 팝업은 클릭 직후 바로 연다(차단 방지)
-  const popup = signInWithPopup(auth, new GoogleAuthProvider());
-  authMsg.textContent = "Google 로그인 중…";
-  try { await popup; authMsg.textContent = "로그인되었습니다."; }
-  catch (error) { authMsg.textContent = `Google 로그인 실패: ${authErr(error)}`; }
-});
-
+// 로그아웃은 기존 로그아웃 동작(홈으로)을 그대로 쓴다
 logoutBtn.addEventListener("click", async () => {
-  try { await signOut(auth); authMsg.textContent = "로그아웃되었습니다."; }
+  try { await logoutToHome(); }
   catch (error) { authMsg.textContent = `로그아웃 실패: ${authErr(error)}`; }
 });
 
