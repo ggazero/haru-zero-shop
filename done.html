@@ -38,8 +38,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </div></header>
 
 <main><div class="wrap">
-  <h2>주문이 접수되었습니다</h2>
-  <div class="prose">
+  <!-- 제목과 결과는 done.js 가 채웁니다. 「주문이 접수되었습니다」는 주문 저장에 성공했을 때만 나옵니다 -->
+  <h2 id="done-title">주문 확인</h2>
+  <pre id="done-result"></pre>
+  <div class="prose" id="done-prose" hidden>
     <p>연습용 주문이라 실제로 배송되지는 않습니다.</p>
     <p>영업일 기준 이틀 안에 보내드리는 것이 원래 약속입니다.</p>
   </div>
@@ -48,6 +50,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <footer class="site"><div class="wrap"></div></footer>
 <script src="assets/shop.js"></script>
 <script src="assets/app.js"></script>
+<script type="module" src="assets/done.js"></script>
 <script type="module" src="assets/auth-ui.js"></script>
 </body>
 </html>

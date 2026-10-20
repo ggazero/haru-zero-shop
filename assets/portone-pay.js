@@ -1,11 +1,23 @@
 /* ===========================================================
    하루상점 — 포트원 V2 테스트 결제창
-   「결제하기」를 누르면 테스트 결제창만 엽니다.
-   주문 저장·장바구니 비우기·완료 화면 이동은 하지 않습니다.
+   「결제하기」를 누르면 테스트 결제창을 열고, 결과를 주문 완료 화면으로 넘깁니다.
+   주문 저장·장바구니 비우기는 주문 완료 화면(done.js)이 합니다.
    =========================================================== */
 
 const PORTONE_STORE_ID = "store-576194bc-c6f2-4a0a-824c-3c5a10f836a3";
 const PORTONE_CHANNEL_KEY = "channel-key-130fa5dc-3363-47e7-ab70-c958ac1d0f37";
+// 휴대폰 결제는 결제를 마치면 이 주소로 돌아온다 (paymentId·code·message 가 주소 뒤에 붙는다)
+// 배포 주소가 여러 개(Vercel 기본 도메인·브랜치 도메인)일 수 있어서,
+// 지금 열려 있는 결제 화면과 같은 도메인의 done.html 로 돌아오게 한다
+const PORTONE_REDIRECT_URL = new URL("done.html", location.href).href;
+
+// PC 결제 결과도 휴대폰과 같은 모양(paymentId·code·message)으로 주문 완료 화면에 넘긴다
+function goDone(paymentId, response) {
+  const params = new URLSearchParams({ paymentId });
+  if (response.code !== undefined) params.set("code", response.code);
+  if (response.message !== undefined) params.set("message", response.message);
+  location.href = "done.html?" + params.toString();
+}
 
 // 결제 번호 - HARU- 뒤에 누른 시각(밀리초)과 임의 글자를 붙인다
 function makePaymentId() {
@@ -61,11 +73,18 @@ document.addEventListener("submit", async e => {
       orderName: makeOrderName(items),
       totalAmount: payableAmount(),
       currency: "CURRENCY_KRW",
-      payMethod: "CARD"
+      payMethod: "CARD",
+      // 상품 ID 와 수량만 담는다 (금액은 넣지 않는다)
+      customData: { items: items.map(i => ({ id: i.id, qty: i.qty })) },
+      redirectUrl: PORTONE_REDIRECT_URL
     });
 
-    // 요약하지 않고 requestPayment() 가 돌려준 응답을 그대로 보여 준다
-    showPayResult(["paymentId: " + paymentId, JSON.stringify(response, null, 2) ?? "undefined"]);
+    // 응답이 없으면(휴대폰처럼 페이지를 떠나는 경우 등) 화면에 그대로 남긴다
+    if (!response) {
+      showPayResult(["paymentId: " + paymentId, JSON.stringify(response) ?? "undefined"]);
+      return;
+    }
+    goDone(paymentId, response);
   } catch (err) {
     showPayResult(["paymentId: " + paymentId, String(err)]);
   } finally {
