@@ -43,3 +43,8 @@ test("로그인 안 한 사람이 상품을 읽는다", async () => {
   const guest = testEnv.unauthenticatedContext();
   await assertSucceeds(getDoc(doc(guest.firestore(), "products/p1")));
 });
+
+test("손님이 남의 주문을 읽는다", async () => {
+  const 사람 = testEnv.authenticatedContext("cust01");
+  await assertFails(getDoc(doc(사람.firestore(), "orders/o1")));
+});
