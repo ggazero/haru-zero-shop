@@ -95,6 +95,20 @@
       <button class="btn" id="rt-write-product" type="button" disabled>상품 가격 0원으로</button>
       <div class="rt-result" id="rt-write-product-result" role="status" aria-live="polite">아직 시도하지 않았습니다.</div>
     </section>
+
+    <!-- 5) 서버 금액 계산 (calcOrderTotal) -->
+    <section class="rt-panel rt-wide" aria-labelledby="rt-calc-title">
+      <h2 id="rt-calc-title">④ 서버에게 금액 묻기</h2>
+      <p class="rt-note">
+        Callable 함수 <code>calcOrderTotal</code> 에 <code>productId "p1"</code>, <code>quantity 2</code> 를 보냅니다.
+        「가격 바꿔 보내기」는 같은 요청에 <code>price: 100</code> 을 덧붙여 보냅니다. 서버는 Firestore 가격만 쓰므로 결과가 같아야 합니다.
+      </p>
+      <div class="rt-actions">
+        <button class="btn" id="rt-calc" type="button">서버에게 금액 묻기</button>
+        <button class="btn" id="rt-calc-price" type="button">가격 바꿔 보내기</button>
+      </div>
+      <div class="rt-result" id="rt-calc-result" role="status" aria-live="polite">아직 시도하지 않았습니다.</div>
+    </section>
   </div>
 </div></main>
 <footer class="site"><div class="wrap"></div></footer>

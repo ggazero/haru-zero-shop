@@ -19,6 +19,9 @@
 import {
   getFirestore, collection, doc, query, where, getDocs, getDoc, updateDoc
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+import {
+  getFunctions, httpsCallable
+} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-functions.js";
 import { auth, subscribeAuth } from "./auth.js";
 
 const db = getFirestore(auth.app);
@@ -224,3 +227,25 @@ productBtn.addEventListener("click", async () => {
     productBtn.disabled = false;
   }
 });
+
+// ====== 5) 서버에게 금액 묻기 (calcOrderTotal) ======
+// 로그인하지 않아도 누를 수 있다 — 서버가 거절하는 문구도 그대로 보여 준다.
+const calcOut = $("rt-calc-result");
+const calcOrderTotal = httpsCallable(getFunctions(auth.app, "us-central1"), "calcOrderTotal");
+
+async function askTotal(btn, data) {
+  btn.disabled = true;
+  calcOut.textContent = `보내는 값: ${JSON.stringify(data)} — 응답을 기다리는 중입니다…`;
+  try {
+    const result = await calcOrderTotal(data);
+    calcOut.textContent = `보낸 값: ${JSON.stringify(data)} → totalPrice: ${result.data.totalPrice}`;
+  } catch (error) {
+    calcOut.textContent = `보낸 값: ${JSON.stringify(data)} → 오류: ${error.message} (${error.code})`;
+    console.error("[금액 묻기] 실패", error);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+$("rt-calc").addEventListener("click", e => askTotal(e.currentTarget, { productId: "p1", quantity: 2 }));
+$("rt-calc-price").addEventListener("click", e => askTotal(e.currentTarget, { productId: "p1", quantity: 2, price: 100 }));
