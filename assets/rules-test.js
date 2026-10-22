@@ -249,3 +249,4 @@ async function askTotal(btn, data) {
 
 $("rt-calc").addEventListener("click", e => askTotal(e.currentTarget, { productId: "p1", quantity: 2 }));
 $("rt-calc-price").addEventListener("click", e => askTotal(e.currentTarget, { productId: "p1", quantity: 2, price: 100 }));
+$("rt-calc-zero").addEventListener("click", e => askTotal(e.currentTarget, { productId: "p1", quantity: 0 }));
