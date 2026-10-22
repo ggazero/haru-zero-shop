@@ -230,10 +230,10 @@ productBtn.addEventListener("click", async () => {
 
 // ====== 5) 서버에게 금액 묻기 (calcOrderTotal) ======
 // 로그인하지 않아도 누를 수 있다 — 서버가 거절하는 문구도 그대로 보여 준다.
-const calcOut = $("rt-calc-result");
+// 버튼마다 결과 칸을 따로 두어 세 결과를 나란히 비교한다.
 const calcOrderTotal = httpsCallable(getFunctions(auth.app, "us-central1"), "calcOrderTotal");
 
-async function askTotal(btn, data) {
+async function askTotal(btn, calcOut, data) {
   btn.disabled = true;
   calcOut.textContent = `보내는 값: ${JSON.stringify(data)} — 응답을 기다리는 중입니다…`;
   try {
@@ -247,6 +247,6 @@ async function askTotal(btn, data) {
   }
 }
 
-$("rt-calc").addEventListener("click", e => askTotal(e.currentTarget, { productId: "p1", quantity: 2 }));
-$("rt-calc-price").addEventListener("click", e => askTotal(e.currentTarget, { productId: "p1", quantity: 2, price: 100 }));
-$("rt-calc-zero").addEventListener("click", e => askTotal(e.currentTarget, { productId: "p1", quantity: 0 }));
+$("rt-calc").addEventListener("click", e => askTotal(e.currentTarget, $("rt-calc-result"), { productId: "p1", quantity: 2 }));
+$("rt-calc-price").addEventListener("click", e => askTotal(e.currentTarget, $("rt-calc-price-result"), { productId: "p1", quantity: 2, price: 100 }));
+$("rt-calc-zero").addEventListener("click", e => askTotal(e.currentTarget, $("rt-calc-zero-result"), { productId: "p1", quantity: 0 }));
