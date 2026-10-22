@@ -1,0 +1,36 @@
+/* 상품 안내 챗봇 — 첫 화면 오른쪽 아래. 모든 선택자는 bot- 접두사 */
+.bot-toggle{position:fixed;right:20px;bottom:20px;z-index:50;width:58px;height:58px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;
+  background:var(--accent);color:var(--accent-ink);border:2px solid #d2bfa0;
+  box-shadow:0 3px 0 #304126,0 6px 14px #604c2430;font-size:26px;line-height:1;font-family:inherit}
+.bot-toggle:hover{transform:translateY(-1px)}
+
+.bot-panel{position:fixed;right:20px;bottom:90px;z-index:50;display:flex;flex-direction:column;
+  width:min(340px,calc(100vw - 32px));height:min(440px,calc(100vh - 120px));
+  background:var(--card);border:1px solid var(--line);border-top:4px solid #9ba078;border-radius:3px;
+  box-shadow:3px 4px 0 #d6c6a42b,0 10px 24px #604c2430}
+.bot-panel[hidden]{display:none}
+.bot-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;
+  border-bottom:1px solid var(--line)}
+.bot-head h2{margin:0;font-size:16px}
+.bot-close{min-width:36px;min-height:36px;padding:0;border:0;background:none;color:var(--sub);
+  font-size:20px;cursor:pointer;font-family:inherit}
+
+.bot-log{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.bot-msg{max-width:85%;padding:8px 11px;border-radius:3px;font-size:14px;line-height:1.6;
+  overflow-wrap:anywhere;white-space:pre-wrap}
+.bot-msg.bot-me{align-self:flex-end;background:var(--accent);color:var(--accent-ink)}
+.bot-msg.bot-ai{align-self:flex-start;background:#f3ead6;border:1px solid #e0d2b4}
+.bot-msg.bot-info{align-self:center;max-width:100%;color:var(--sub);font-size:13px;background:none;padding:2px}
+
+.bot-form{display:flex;gap:6px;padding:10px;border-top:1px solid var(--line)}
+.bot-form input{flex:1;min-width:0;padding:9px 10px;border:1px solid var(--line);border-radius:3px;
+  font-size:14px;font-family:inherit;background:#fffdf7}
+.bot-form .btn{min-height:40px;padding:0 14px;font-size:14px;white-space:nowrap}
+.bot-form .btn:disabled,.bot-form input:disabled{opacity:.55;cursor:not-allowed}
+
+@media(max-width:480px){
+  .bot-toggle{right:16px;bottom:16px}
+  .bot-panel{right:16px;bottom:84px}
+}
+@media(prefers-reduced-motion:reduce){.bot-toggle:hover{transform:none}}
