@@ -1,0 +1,9 @@
+{
+  "type": "Transaction.Paid",
+  "timestamp": "2026-10-21T01:00:00.000Z",
+  "data": {
+    "storeId": "store-test",
+    "paymentId": "HARU-1792479968392-438496",
+    "transactionId": "tx-test-0001"
+  }
+}
