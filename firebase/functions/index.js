@@ -228,3 +228,4 @@ exports.askShopBot = onCall({region: "us-central1", secrets: [geminiApiKey]}, as
     throw new HttpsError("internal", "지금은 답하기 어려워요. 잠시 뒤에 다시 물어봐 주세요");
   }
 });
+Object.assign(exports, require("./automation"));
