@@ -10,6 +10,11 @@ import { getAuth, onAuthStateChanged, signOut, sendEmailVerification } from "htt
   };
 export const auth = getAuth(getApps().length ? getApp() : initializeApp(firebaseConfig));
 auth.languageCode = "ko";
+// 웹 푸시 알림용 서비스 워커 등록만 합니다. (알림 허락 요청 · 토큰 받기는 아직 안 함)
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("firebase-messaging-sw.js")
+    .catch(err => console.warn("서비스 워커 등록 실패", err));
+}
 export function sendVerificationEmail(user) {
   return sendEmailVerification(user);
 }
