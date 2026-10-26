@@ -5,7 +5,7 @@
    - 화면을 열 때(auth.js)는 적힌 토큰과 같고 30일이 안 지났으면 적지 않는다.
    - 토큰 값은 화면 · Console 에 내지 않는다. 오류는 이름만 한 줄 남긴다.
    =========================================================== */
-import { getMessaging, getToken, isSupported } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-messaging.js";
+import { getMessaging, getToken, isSupported, onMessage } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-messaging.js";
 import {
   getFirestore, doc, getDoc, setDoc, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
@@ -14,6 +14,7 @@ import { auth, authReady } from "./auth.js";
 // Firebase 콘솔 → 프로젝트 설정 → 클라우드 메시징 → 웹 푸시 인증서의 「키 쌍」(공개 키)
 const VAPID_KEY = "BPDS52nsMaRpLH8rpfl62Rj33M_4v2KhxJ9KCZmz7MEGG88_9mqUSV4r8-dMk-_eu6dk3scB72rmXrgFM-dT5rQ";
 const FRESH_MS = 30 * 24 * 60 * 60 * 1000;
+let listening = false;
 
 export async function syncPushToken({ force = false } = {}) {
   try {
@@ -24,11 +25,20 @@ export async function syncPushToken({ force = false } = {}) {
 
     // 이미 등록해 둔 /firebase-messaging-sw.js 를 그대로 쓴다 (새로 등록하지 않는다)
     const registration = await navigator.serviceWorker.ready;
-    const token = await getToken(getMessaging(auth.app), {
+    const messaging = getMessaging(auth.app);
+    const token = await getToken(messaging, {
       vapidKey: VAPID_KEY,
       serviceWorkerRegistration: registration
     });
     if (!token) return;
+
+    // 가게 화면을 보고 있을 때 온 알림은 서비스 워커가 띄우지 않고 이 화면으로 넘긴다 → 여기서 직접 띄운다
+    if (!listening) {
+      listening = true;
+      onMessage(messaging, ({ notification }) => {
+        if (notification) registration.showNotification(notification.title, { body: notification.body });
+      });
+    }
 
     const ref = doc(getFirestore(auth.app), "pushTokens", user.uid);
     if (!force) {
