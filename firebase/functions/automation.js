@@ -161,7 +161,7 @@ exports.onOrderShipped = onDocumentUpdated(
           title: "[작은 상점] 배송이 출발했습니다",
           body: "주문하신 상품이 출발했어요. 눌러서 가게에서 확인하세요.",
         },
-        webpush: { fcmOptions: { link: SHOP_URL } },
+        webpush: { fcmOptions: { link: SHOP_URL + "/?utm_source=webpush&utm_medium=push&utm_campaign=2610_order_shipped" } },
       });
       await orderRef.update({ pushStatus: "sent" });
     } catch (e) {
