@@ -102,6 +102,8 @@ async function placePaidOrder() {
   Cart.clear();
   document.querySelectorAll(".cart-count").forEach(n => { n.textContent = Cart.count(); });
   show("주문이 접수되었습니다", ["결제 ID: " + paymentId, "주문이 접수되었습니다"]);
+  // 주문 저장에 성공했을 때만 배송 알림 카드를 띄운다 (push-ask.js)
+  showPushAsk(result);
 }
 
 if (code) {

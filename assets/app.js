@@ -288,7 +288,11 @@ async function paintDetail() {
       const result = await mod.placeOrder(p.id);
       if (result.status === "login") orderResult.textContent = "로그인이 필요합니다";
       else if (result.status === "soldout") orderResult.textContent = "재고가 없습니다";
-      else orderResult.textContent = `주문이 완료되었습니다. 주문 번호 ${result.orderId}`;
+      else {
+        orderResult.textContent = `주문이 완료되었습니다. 주문 번호 ${result.orderId}`;
+        // 주문에 성공했을 때만 배송 알림 카드를 그 바로 아래에 띄운다 (push-ask.js)
+        if (typeof showPushAsk === "function") showPushAsk(orderResult);
+      }
       if (result.stock !== undefined) box.querySelector(".stock").textContent = stockText(result.stock);
     } catch (error) {
       // 오류 글은 줄이지 않고 그대로 보여 준다
