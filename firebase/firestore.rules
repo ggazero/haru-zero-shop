@@ -34,6 +34,11 @@ service cloud.firestore {
       allow read: if isMine(userId);
     }
 
+    // 알림 받는 주소 - 문서 ID가 내 UID일 때만 읽고 쓴다
+    match /pushTokens/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

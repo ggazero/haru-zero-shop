@@ -43,6 +43,12 @@ function showPushAsk(anchor) {
     console.log("알림 권한 요청 결과:", result);
     if (result === "default") status.textContent = "아직 정하지 않으셨어요. 다시 누르면 한 번 더 물어볼게요.";
     paint(result);
+    // 허락받은 직후에는 알림 받을 주소를 바로 적는다 (push-token.js)
+    if (result === "granted") {
+      import("./push-token.js")
+        .then(m => m.syncPushToken({ force: true }))
+        .catch(error => console.warn("알림 주소 저장 실패:", error?.name ?? "Error"));
+    }
   });
 
   // 「나중에」: 이번 주문의 카드만 닫는다 (다음 주문 때 다시 나온다)

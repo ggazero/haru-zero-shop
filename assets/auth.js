@@ -37,6 +37,12 @@ export function loginReturnPath() {
   const next = new URLSearchParams(location.search).get("next");
   return RETURN_PATHS.includes(next) ? next : null;
 }
+// 이미 로그인했고 알림을 허락해 둔 손님이면 알림 받을 주소를 확인한다 (권한은 묻지 않는다)
+if ("Notification" in window && Notification.permission === "granted") {
+  authReady.then(user => {
+    if (user) import("./push-token.js").then(m => m.syncPushToken());
+  }).catch(error => console.warn("알림 주소 저장 실패:", error?.name ?? "Error"));
+}
 export async function logoutToHome() {
   await signOut(auth);
   location.replace("index.html");
