@@ -14,6 +14,8 @@ import { auth, authReady } from "./auth.js";
 // Firebase 콘솔 → 프로젝트 설정 → 클라우드 메시징 → 웹 푸시 인증서의 「키 쌍」(공개 키)
 const VAPID_KEY = "BPDS52nsMaRpLH8rpfl62Rj33M_4v2KhxJ9KCZmz7MEGG88_9mqUSV4r8-dMk-_eu6dk3scB72rmXrgFM-dT5rQ";
 const FRESH_MS = 30 * 24 * 60 * 60 * 1000;
+// 서버가 링크를 빠뜨렸을 때 쓸 배송 알림 이동 주소 (firebase/functions/automation.js 와 같은 값)
+const SHIPPED_LINK = "https://haru-zero-shop.vercel.app/?utm_source=webpush&utm_medium=push&utm_campaign=2610_order_shipped";
 let listening = false;
 
 export async function syncPushToken({ force = false } = {}) {
@@ -35,8 +37,12 @@ export async function syncPushToken({ force = false } = {}) {
     // 가게 화면을 보고 있을 때 온 알림은 서비스 워커가 띄우지 않고 이 화면으로 넘긴다 → 여기서 직접 띄운다
     if (!listening) {
       listening = true;
-      onMessage(messaging, ({ notification }) => {
-        if (notification) registration.showNotification(notification.title, { body: notification.body });
+      // 누르면 이동할 주소를 data.link 에 담는다 → firebase-messaging-sw.js 의 notificationclick 이 연다
+      onMessage(messaging, ({ notification, fcmOptions }) => {
+        if (notification) registration.showNotification(notification.title, {
+          body: notification.body,
+          data: { link: fcmOptions?.link || SHIPPED_LINK }
+        });
       });
     }
 
