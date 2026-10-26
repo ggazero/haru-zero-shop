@@ -125,3 +125,56 @@ exports.countDailyOrders = onSchedule(
     console.log("어제 집계", dateId, snap.size, total);
   }
 );
+
+
+// 5. 주문 상태가 shipped 로 바뀌면 그 주문 손님에게 배송 출발 알림을 한 통 보내는 함수
+const { onDocumentUpdated } = require("firebase-functions/v2/firestore");
+const { getMessaging } = require("firebase-admin/messaging");
+
+// 알림을 누르면 열 가게 주소 (Vercel 운영 주소, 끝에 / 없음)
+const SHOP_URL = "https://haru-zero-shop.vercel.app";
+
+exports.onOrderShipped = onDocumentUpdated(
+  { document: "orders/{orderId}", region: "us-central1" },
+  async (event) => {
+    const before = event.data.before.data();
+    const after = event.data.after.data();
+
+    // 다른 상태에서 shipped 로 바뀐 순간에만 보낸다
+    // (pushStatus 를 적어 다시 불려도 before 가 이미 shipped 라 여기서 끝난다)
+    if (before.status === "shipped" || after.status !== "shipped") return;
+
+    const orderRef = event.data.after.ref;
+    const tokenRef = getFirestore().doc("pushTokens/" + after.userId);
+    const tokenDoc = after.userId ? await tokenRef.get() : null;
+    const token = tokenDoc?.exists ? tokenDoc.data().token : null;
+
+    if (!token) {
+      await orderRef.update({ pushStatus: "no_token" });
+      return;
+    }
+
+    try {
+      await getMessaging().send({
+        token,
+        notification: {
+          title: "[작은 상점] 배송이 출발했습니다",
+          body: "주문하신 상품이 출발했어요. 눌러서 가게에서 확인하세요.",
+        },
+        webpush: { fcmOptions: { link: SHOP_URL } },
+      });
+      await orderRef.update({ pushStatus: "sent" });
+    } catch (e) {
+      console.error("배송 알림 실패", event.params.orderId, e.code || e.message);
+      await orderRef.update({
+        pushStatus: "failed",
+        pushError: e.code || e.message,
+      });
+
+      // 더 이상 쓸 수 없는 알림 주소는 지운다
+      if (e.code === "messaging/registration-token-not-registered") {
+        await tokenRef.delete();
+      }
+    }
+  }
+);
