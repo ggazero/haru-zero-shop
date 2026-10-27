@@ -1,3 +1,4 @@
+// 이 파일은 main 에 들어오면 GitHub Actions 가 테스트를 거쳐 배포한다 - 콘솔에서 고치지 않는다
 
 rules_version = '2';
 
