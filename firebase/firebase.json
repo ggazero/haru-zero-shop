@@ -1,4 +1,9 @@
 {
+  "hosting": {
+    "public": "public",
+    "predeploy": ["node copy-site.mjs"],
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]
+  },
   "firestore": {
     "rules": "firestore.rules"
   },
