@@ -489,6 +489,14 @@ const activityReload = document.getElementById("ad-activity-reload");
 let logs = [];
 let activityCount = 0;
 
+// 바뀐 필드 이름을 화면에만 한국어로 보여 준다 (adminLogs 의 changedKeys 값은 영어 그대로 둔다)
+// 표에 없는 필드는 원래 이름 그대로
+const KEY_LABELS = {
+  deletedAt: "내림 표시", isVisible: "노출", stock: "재고", price: "가격",
+  name: "이름", summary: "설명", imagePath: "사진", updatedAt: "수정 시각"
+};
+const keyLabel = key => Object.hasOwn(KEY_LABELS, key) ? KEY_LABELS[key] : String(key);
+
 async function loadActivity() {
   const current = ++activityCount;
   activityStatus.textContent = "최근 활동을 불러오는 중입니다.";
@@ -510,7 +518,7 @@ function renderActivity() {
     const at = log.at && typeof log.at.toDate === "function" ? seoulTime.format(log.at.toDate()) : "-";
     const product = products.find(p => p.id === log.productId);
     const name = product ? nameOf(product) || log.productId : `${log.productId ?? "-"} (목록에 없음)`;
-    const keys = Array.isArray(log.changedKeys) ? log.changedKeys.join(", ") : "-";
+    const keys = Array.isArray(log.changedKeys) ? log.changedKeys.map(keyLabel).join(", ") : "-";
     const tr = document.createElement("tr");
     tr.append(cell("", at), cell("", name), cell("ad-id", String(log.action ?? "-")), cell("", keys));
     return tr;
