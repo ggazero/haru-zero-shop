@@ -30,6 +30,16 @@
   .ad-new-form { max-width:520px; margin:16px 0 0; }
   .ad-new-form .ad-actions { margin-top:14px; }
   .ad-list-status { margin:14px 0 8px; color:var(--sub); font-size:13.5px; overflow-wrap:anywhere; }
+  .ad-list-status:empty { display:none; }
+  .ad-tools { display:flex; flex-wrap:wrap; align-items:flex-end; gap:10px 18px; margin:18px 0 0; }
+  .ad-filters { display:flex; flex-wrap:wrap; gap:6px; }
+  .btn.ad-small[aria-pressed="true"] { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
+  .ad-tools label { display:flex; flex-direction:column; gap:4px; font-size:13px; color:var(--sub); }
+  .ad-tools input, .ad-tools select { padding:7px 9px; border:1px solid var(--line); border-radius:3px; font:inherit;
+    font-size:14px; color:var(--ink); background:#fffdf7; }
+  .ad-tools input { width:min(220px, 70vw); }
+  .ad-count { margin:12px 0 8px; font-size:14px; font-weight:600; }
+  .ad-empty { color:var(--sub); text-align:center; }
   .ad-table-wrap { overflow-x:auto; }
   table.ad-table { width:100%; border-collapse:collapse; background:var(--card); font-size:14px; }
   table.ad-table th, table.ad-table td { border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:middle; }
@@ -115,7 +125,20 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       </div>
       <p class="ad-result" id="ad-new-result" role="alert"></p>
     </form>
+    <div class="ad-tools">
+      <div class="ad-filters" role="group" aria-label="상품 거르기">
+        <button class="btn ghost ad-small" type="button" data-filter="all" aria-pressed="true">전체</button>
+        <button class="btn ghost ad-small" type="button" data-filter="soldout" aria-pressed="false">품절만</button>
+        <button class="btn ghost ad-small" type="button" data-filter="hidden" aria-pressed="false">숨김만</button>
+      </div>
+      <label>이름 검색<input id="ad-search" type="search" autocomplete="off"></label>
+      <label>정렬<select id="ad-sort">
+        <option value="stock" selected>재고 적은 순</option>
+        <option value="name">이름순</option>
+      </select></label>
+    </div>
     <p class="ad-list-status" id="ad-list-status" role="status"></p>
+    <p class="ad-count" id="ad-count" role="status"></p>
     <div class="ad-table-wrap">
       <table class="ad-table">
         <thead>

@@ -158,19 +158,60 @@ function photoCell(p) {
 }
 
 let products = [];
+let loaded = false;         // products 를 끝까지 읽었는가 (개수 줄은 읽었을 때만)
 const messages = new Map(); // 문서 ID → 그 상품 옆에 보일 결과 한 줄
 let editing = null;         // 고치는 중인 문서 ID
 let loadCount = 0;
+
+/* --- 거르기 · 이름 검색 · 정렬 ---
+   이미 읽은 products 배열만 브라우저에서 다시 고른다 (Firestore 를 다시 읽지 않는다).
+   품절만: stock 이 숫자 0 인 상품 / 숨김만: isVisible 이 false 인 상품 */
+const isSoldOut = p => p.stock === 0;
+const isHidden = p => p.isVisible === false;
+const FILTERS = { all: () => true, soldout: isSoldOut, hidden: isHidden };
+const byName = new Intl.Collator("ko", { numeric: true, sensitivity: "base" });
+const nameOf = p => String(p.name ?? "");
+const SORTS = {
+  // 재고가 숫자가 아닌 상품은 맨 뒤로, 재고가 같으면 이름순
+  stock: (a, b) => {
+    const sa = typeof a.stock === "number" ? a.stock : Infinity;
+    const sb = typeof b.stock === "number" ? b.stock : Infinity;
+    return sa === sb ? byName.compare(nameOf(a), nameOf(b)) : sa < sb ? -1 : 1;
+  },
+  name: (a, b) => byName.compare(nameOf(a), nameOf(b)) || byName.compare(a.id, b.id)
+};
+const view = { filter: "all", search: "", sort: "stock" }; // 지금 고른 것 - 다시 읽거나 저장해도 그대로 둔다
+
+function pickProducts(list, { filter, search, sort }) {
+  const word = search.trim().toLowerCase();
+  const picked = list.filter(p => FILTERS[filter](p) && (!word || nameOf(p).toLowerCase().includes(word)));
+  return SORTS[sort] ? picked.sort(SORTS[sort]) : picked;
+}
+
+const countLine = document.getElementById("ad-count");
+const filterButtons = document.querySelectorAll("#ad-products [data-filter]");
+const searchInput = document.getElementById("ad-search");
+const sortSelect = document.getElementById("ad-sort");
+
+filterButtons.forEach(button => button.addEventListener("click", () => {
+  view.filter = button.dataset.filter;
+  filterButtons.forEach(b => b.setAttribute("aria-pressed", String(b === button)));
+  renderProducts();
+}));
+searchInput.addEventListener("input", () => { view.search = searchInput.value; renderProducts(); });
+sortSelect.addEventListener("change", () => { view.sort = sortSelect.value; renderProducts(); });
 
 function showProducts(on) {
   loadCount++;
   productsBox.hidden = !on;
   if (on) { loadProducts(); return; }
   products = [];
+  loaded = false;
   messages.clear();
   editing = null;
   rows.replaceChildren();
   listStatus.textContent = "";
+  countLine.textContent = "";
   newForm.hidden = true;
   newResult.textContent = "";
 }
@@ -183,18 +224,30 @@ async function loadProducts() {
     const snap = await getDocs(collection(db, "products"));
     if (current !== loadCount) return;
     products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const hidden = products.filter(p => p.isVisible !== true).length;
-    listStatus.textContent = `상품 ${products.length}개 (숨김 ${hidden}개 포함)`;
+    loaded = true;
+    listStatus.textContent = "";
   } catch (error) {
     if (current !== loadCount) return;
     products = [];
+    loaded = false;
     listStatus.textContent = `상품을 불러오지 못했습니다 — ${errorText(error)}`;
   }
   renderProducts();
 }
 
+// 지금 고른 거르기 · 검색 · 정렬로 표를 다시 그린다
 function renderProducts() {
-  rows.replaceChildren(...products.flatMap(p => editing === p.id ? [productRow(p), editRow(p)] : [productRow(p)]));
+  const shown = pickProducts(products, view);
+  countLine.textContent = loaded ? `지금 보이는 상품 ${shown.length}개 / 전체 ${products.length}개` : "";
+  if (loaded && shown.length === 0) {
+    const empty = cell("ad-empty", products.length ? "조건에 맞는 상품이 없습니다" : "상품이 없습니다");
+    empty.colSpan = 9;
+    const tr = document.createElement("tr");
+    tr.append(empty);
+    rows.replaceChildren(tr);
+    return;
+  }
+  rows.replaceChildren(...shown.flatMap(p => editing === p.id ? [productRow(p), editRow(p)] : [productRow(p)]));
 }
 
 function cell(className, ...children) {
