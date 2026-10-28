@@ -40,6 +40,14 @@
   .ad-tools input { width:min(220px, 70vw); }
   .ad-count { margin:12px 0 8px; font-size:14px; font-weight:600; }
   .ad-empty { color:var(--sub); text-align:center; }
+  .ad-notice { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin:0 0 10px; padding:10px 12px;
+    font-size:14px; background:#f8f2e4; border:1px solid var(--line); border-left:4px solid #9ba078; border-radius:3px; }
+  .ad-notice[hidden] { display:none; }
+  .ad-dialog { max-width:min(420px, calc(100vw - 32px)); padding:22px 24px; border:1px solid var(--line);
+    border-top:4px solid #9ba078; border-radius:3px; background:var(--card); color:var(--ink); }
+  .ad-dialog::backdrop { background:#2b2d2566; }
+  .ad-dialog p { margin:0 0 18px; font-size:16px; font-weight:600; overflow-wrap:anywhere; }
+  .ad-down { color:#9a3412; font-weight:600; }
   .ad-table-wrap { overflow-x:auto; }
   table.ad-table { width:100%; border-collapse:collapse; background:var(--card); font-size:14px; }
   table.ad-table th, table.ad-table td { border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:middle; }
@@ -130,6 +138,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <button class="btn ghost ad-small" type="button" data-filter="all" aria-pressed="true">전체</button>
         <button class="btn ghost ad-small" type="button" data-filter="soldout" aria-pressed="false">품절만</button>
         <button class="btn ghost ad-small" type="button" data-filter="hidden" aria-pressed="false">숨김만</button>
+        <button class="btn ghost ad-small" type="button" data-filter="deleted" aria-pressed="false">내린 상품</button>
       </div>
       <label>이름 검색<input id="ad-search" type="search" autocomplete="off"></label>
       <label>정렬<select id="ad-sort">
@@ -140,12 +149,43 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
     <p class="ad-list-status" id="ad-list-status" role="status"></p>
     <p class="ad-count" id="ad-count" role="status"></p>
+    <p class="ad-notice" id="ad-notice" role="status" hidden>
+      <span id="ad-notice-text"></span>
+      <button class="btn ghost ad-small" id="ad-notice-undo" type="button">되돌리기</button>
+    </p>
     <div class="ad-table-wrap">
       <table class="ad-table">
         <thead>
-          <tr><th>문서 ID</th><th>사진</th><th>상품명</th><th>가격</th><th>재고</th><th>품절</th><th>노출</th><th>고치기</th><th>결과</th></tr>
+          <tr><th>문서 ID</th><th>사진</th><th>상품명</th><th>가격</th><th>재고</th><th>품절</th><th>노출</th><th>고치기</th><th>내리기</th><th>결과</th></tr>
         </thead>
         <tbody id="ad-product-rows"></tbody>
+      </table>
+    </div>
+    <!-- 내리기 확인: 상품 이름은 스크립트가 글자로만 넣는다 -->
+    <dialog class="ad-dialog" id="ad-takedown" aria-labelledby="ad-takedown-text">
+      <form method="dialog">
+        <p id="ad-takedown-text"></p>
+        <div class="ad-actions">
+          <button class="btn" type="submit" value="confirm">내리기</button>
+          <button class="btn ghost" type="submit" value="cancel" autofocus>그만두기</button>
+        </div>
+      </form>
+    </dialog>
+  </section>
+
+  <!-- 최근 활동: adminLogs 를 읽기만 한다 (role 이 staff / admin 일 때만 보인다) -->
+  <section class="ad-products" id="ad-activity" aria-labelledby="ad-activity-title" hidden>
+    <div class="ad-products-head">
+      <h2 id="ad-activity-title">최근 활동</h2>
+      <button class="btn ghost ad-small" id="ad-activity-reload" type="button">새로 읽기</button>
+    </div>
+    <p class="ad-list-status" id="ad-activity-status" role="status"></p>
+    <div class="ad-table-wrap">
+      <table class="ad-table">
+        <thead>
+          <tr><th>시각</th><th>상품</th><th>action</th><th>바뀐 필드</th></tr>
+        </thead>
+        <tbody id="ad-activity-rows"></tbody>
       </table>
     </div>
   </section>

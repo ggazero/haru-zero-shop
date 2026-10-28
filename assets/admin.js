@@ -3,14 +3,17 @@
    - staff / admin 이면 「관리자: role」, 그 외에는 「주인 명찰 받기」로 grantOwnerRole 을 부른다.
    - 명찰을 받은 뒤와 「다시 확인」에서는 getIdToken(true) 로 토큰을 새로 받아 다시 확인한다.
    - staff / admin 에게만 상품 관리 표를 보여 준다. 숨긴 상품까지 products 전체를 읽는다.
-     지우기 버튼은 만들지 않는다 (규칙에서도 delete 는 막혀 있다).
-   - 사진은 Storage products/{문서 ID}/main.jpg 에 올리고, 100% 올라간 뒤에만 그 경로를 imagePath 에 저장한다. */
+     문서를 지우는 버튼은 만들지 않는다 (규칙에서도 delete 는 막혀 있다).
+     「내리기」는 deletedAt 을 적고 숨기기만 하고, 「되돌리기」는 deletedAt 을 지우고 다시 보이게 한다.
+   - 사진은 Storage products/{문서 ID}/main.jpg 에 올리고, 100% 올라간 뒤에만 그 경로를 imagePath 에 저장한다.
+   - 최근 활동은 adminLogs 를 읽기만 한다 (로그는 서버 함수 onProductWritten 이 쓴다). */
 import { auth, subscribeAuth } from "./auth.js";
 import {
   getFunctions, httpsCallable
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-functions.js";
 import {
-  getFirestore, collection, doc, getDocs, addDoc, updateDoc, serverTimestamp
+  getFirestore, collection, doc, getDocs, addDoc, updateDoc, serverTimestamp, deleteField,
+  query, orderBy, limit
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 import {
   getStorage, ref, uploadBytesResumable, getDownloadURL
@@ -165,10 +168,11 @@ let loadCount = 0;
 
 /* --- 거르기 · 이름 검색 · 정렬 ---
    이미 읽은 products 배열만 브라우저에서 다시 고른다 (Firestore 를 다시 읽지 않는다).
-   품절만: stock 이 숫자 0 인 상품 / 숨김만: isVisible 이 false 인 상품 */
+   품절만: stock 이 숫자 0 인 상품 / 숨김만: isVisible 이 false 인 상품 / 내린 상품: deletedAt 이 있는 상품 */
 const isSoldOut = p => p.stock === 0;
 const isHidden = p => p.isVisible === false;
-const FILTERS = { all: () => true, soldout: isSoldOut, hidden: isHidden };
+const isDeleted = p => p.deletedAt !== undefined && p.deletedAt !== null;
+const FILTERS = { all: () => true, soldout: isSoldOut, hidden: isHidden, deleted: isDeleted };
 const byName = new Intl.Collator("ko", { numeric: true, sensitivity: "base" });
 const nameOf = p => String(p.name ?? "");
 const SORTS = {
@@ -212,8 +216,10 @@ sortSelect.addEventListener("change", () => { view.sort = sortSelect.value; rend
 
 function showProducts(on) {
   loadCount++;
+  activityCount++;
   productsBox.hidden = !on;
-  if (on) { loadProducts(); return; }
+  activityBox.hidden = !on;
+  if (on) { loadProducts(); loadActivity(); return; }
   products = [];
   loaded = false;
   messages.clear();
@@ -223,6 +229,10 @@ function showProducts(on) {
   countLine.textContent = "";
   newForm.hidden = true;
   newResult.textContent = "";
+  hideNotice();
+  logs = [];
+  activityRows.replaceChildren();
+  activityStatus.textContent = "";
 }
 
 // 조건 없이 products 전체를 읽는다 (isVisible: false 인 숨긴 상품도 함께)
@@ -242,6 +252,7 @@ async function loadProducts() {
     listStatus.textContent = `상품을 불러오지 못했습니다 — ${errorText(error)}`;
   }
   renderProducts();
+  renderActivity(); // 활동 줄의 상품 이름은 이 목록에서 찾는다
 }
 
 // 지금 고른 거르기 · 검색 · 정렬로 표를 다시 그린다
@@ -250,7 +261,7 @@ function renderProducts() {
   countLine.textContent = loaded ? `지금 보이는 상품 ${shown.length}개 / 전체 ${products.length}개` : "";
   if (loaded && shown.length === 0) {
     const empty = cell("ad-empty", products.length ? "조건에 맞는 상품이 없습니다" : "상품이 없습니다");
-    empty.colSpan = 9;
+    empty.colSpan = 10;
     const tr = document.createElement("tr");
     tr.append(empty);
     rows.replaceChildren(tr);
@@ -291,6 +302,12 @@ const numberText = value => value === undefined ? "-"
 function productRow(p) {
   const soldOut = !(p.stock > 0);
   const visible = p.isVisible === true;
+  const down = isDeleted(p);
+  // 내린 상품은 노출 토글을 두지 않는다 - 「되돌리기」로만 다시 보이게 한다
+  const visibility = down
+    ? cell("ad-down", "내림")
+    : cell("", toggle(visible ? "보임" : "숨김",
+      smallButton(visible ? "노출 끄기" : "노출 켜기", () => save(p.id, { isVisible: !visible }))));
   const tr = document.createElement("tr");
   const msg = cell("ad-msg", messages.get(p.id) ?? "");
   msg.dataset.id = p.id;
@@ -302,12 +319,12 @@ function productRow(p) {
     cell("ad-num", numberText(p.stock)),
     cell("", toggle(soldOut ? "품절" : "판매 중",
       smallButton(soldOut ? "품절 끄기" : "품절 켜기", () => soldOut ? restock(p) : save(p.id, { stock: 0 })))),
-    cell("", toggle(visible ? "보임" : "숨김",
-      smallButton(visible ? "노출 끄기" : "노출 켜기", () => save(p.id, { isVisible: !visible })))),
+    visibility,
     cell("", smallButton(editing === p.id ? "닫기" : "고치기", () => {
       editing = editing === p.id ? null : p.id;
       renderProducts();
     })),
+    cell("", down ? smallButton("되돌리기", () => restore(p)) : smallButton("내리기", () => takeDown(p))),
     msg
   );
   return tr;
@@ -361,7 +378,7 @@ function editRow(p) {
     }),
     smallButton("취소", () => { editing = null; renderProducts(); }));
   const td = cell("", fields);
-  td.colSpan = 9;
+  td.colSpan = 10;
   tr.append(td);
   return tr;
 }
@@ -378,7 +395,7 @@ function restock(p) {
 
 // 고친 칸만 updateDoc 으로 저장하고, 성공하면 목록을 다시 읽는다. 실패하면 오류를 그 상품 옆에 남긴다
 // 사진(file)이 있으면 먼저 products/{id}/main.jpg 에 덮어 올리고, 다 올라간 뒤에 imagePath 와 함께 저장한다.
-// 올리기가 실패하면 문서는 아무것도 바꾸지 않는다
+// 올리기가 실패하면 문서는 아무것도 바꾸지 않는다. 저장에 성공하면 true
 async function save(id, data, closeEdit, file) {
   const controls = rows.querySelectorAll("button, input");
   controls.forEach(c => { c.disabled = true; });
@@ -400,11 +417,114 @@ async function save(id, data, closeEdit, file) {
     messages.set(id, "저장했습니다");
     if (closeEdit) editing = null;
     await loadProducts();
+    return true;
   } catch (error) {
     setMessage(id, errorText(error));
     controls.forEach(c => { c.disabled = false; });
+    return false;
   }
 }
+
+/* --- 내리기 · 되돌리기 ---
+   문서는 지우지 않는다. 내리기는 deletedAt(서버 시각)과 isVisible: false 만,
+   되돌리기는 deletedAt 필드를 없애고 isVisible: true 만 저장한다 (둘 다 save() 가 updatedAt 을 함께 적는다).
+   이름 · 가격 · 재고 · imagePath 는 건드리지 않는다 */
+const takedownDialog = document.getElementById("ad-takedown");
+const takedownText = document.getElementById("ad-takedown-text");
+const notice = document.getElementById("ad-notice");
+const noticeText = document.getElementById("ad-notice-text");
+const noticeUndo = document.getElementById("ad-notice-undo");
+let noticeProduct = null;
+
+// 「『상품명』을 가게에서 내립니다」 - 「내리기」를 눌렀을 때만 true
+function confirmTakedown(name) {
+  takedownText.textContent = `『${name}』을 가게에서 내립니다`;
+  if (typeof takedownDialog.showModal !== "function") return Promise.resolve(confirm(takedownText.textContent));
+  takedownDialog.returnValue = "";
+  takedownDialog.showModal();
+  return new Promise(resolve => {
+    takedownDialog.addEventListener("close", () => resolve(takedownDialog.returnValue === "confirm"), { once: true });
+  });
+}
+
+async function takeDown(p) {
+  if (!(await confirmTakedown(nameOf(p) || p.id))) return; // 「그만두기」 · Esc 면 아무것도 쓰지 않는다
+  if (await save(p.id, { deletedAt: serverTimestamp(), isVisible: false })) {
+    noticeProduct = p;
+    noticeText.textContent = `『${nameOf(p) || p.id}』을 가게에서 내렸습니다.`;
+    notice.hidden = false;
+  }
+}
+
+async function restore(p) {
+  if (await save(p.id, { deletedAt: deleteField(), isVisible: true })) {
+    messages.set(p.id, "되돌렸습니다");
+    if (noticeProduct && noticeProduct.id === p.id) hideNotice();
+    renderProducts();
+  }
+}
+
+function hideNotice() {
+  noticeProduct = null;
+  notice.hidden = true;
+  noticeText.textContent = "";
+}
+
+noticeUndo.addEventListener("click", async () => {
+  if (!noticeProduct) return;
+  noticeUndo.disabled = true;
+  try {
+    await restore(noticeProduct);
+  } finally {
+    noticeUndo.disabled = false;
+  }
+});
+
+/* --- 최근 활동 ---
+   adminLogs 를 at 최신순으로 10건만 읽는다. 읽기만 하고 쓰지 않는다 (규칙: 직원만 읽기, 쓰기 막힘) */
+const activityBox = document.getElementById("ad-activity");
+const activityStatus = document.getElementById("ad-activity-status");
+const activityRows = document.getElementById("ad-activity-rows");
+const activityReload = document.getElementById("ad-activity-reload");
+let logs = [];
+let activityCount = 0;
+
+async function loadActivity() {
+  const current = ++activityCount;
+  activityStatus.textContent = "최근 활동을 불러오는 중입니다.";
+  try {
+    const snap = await getDocs(query(collection(db, "adminLogs"), orderBy("at", "desc"), limit(10)));
+    if (current !== activityCount) return;
+    logs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    activityStatus.textContent = logs.length ? "" : "아직 활동이 없습니다";
+  } catch (error) {
+    if (current !== activityCount) return;
+    logs = [];
+    activityStatus.textContent = `최근 활동을 불러오지 못했습니다 — ${errorText(error)}`;
+  }
+  renderActivity();
+}
+
+function renderActivity() {
+  activityRows.replaceChildren(...logs.map(log => {
+    const at = log.at && typeof log.at.toDate === "function" ? seoulTime.format(log.at.toDate()) : "-";
+    const product = products.find(p => p.id === log.productId);
+    const name = product ? nameOf(product) || log.productId : `${log.productId ?? "-"} (목록에 없음)`;
+    const keys = Array.isArray(log.changedKeys) ? log.changedKeys.join(", ") : "-";
+    const tr = document.createElement("tr");
+    tr.append(cell("", at), cell("", name), cell("ad-id", String(log.action ?? "-")), cell("", keys));
+    return tr;
+  }));
+}
+
+activityReload.addEventListener("click", async () => {
+  activityReload.disabled = true;
+  try {
+    await loadActivity();
+  } finally {
+    activityReload.disabled = false;
+  }
+});
 
 newButton.addEventListener("click", () => {
   newForm.hidden = !newForm.hidden;
