@@ -178,8 +178,17 @@ const SORTS = {
     const sb = typeof b.stock === "number" ? b.stock : Infinity;
     return sa === sb ? byName.compare(nameOf(a), nameOf(b)) : sa < sb ? -1 : 1;
   },
-  name: (a, b) => byName.compare(nameOf(a), nameOf(b)) || byName.compare(a.id, b.id)
+  name: (a, b) => byName.compare(nameOf(a), nameOf(b)) || byName.compare(a.id, b.id),
+  // updatedAt 이 늦은 상품이 위로. Firestore Timestamp 의 toMillis() 로 비교하고,
+  // updatedAt 이 없거나 Timestamp 가 아닌 상품은 맨 아래로 (그 안에서는 이름순)
+  recent: (a, b) => {
+    const ta = updatedMillis(a), tb = updatedMillis(b);
+    return ta === tb ? byName.compare(nameOf(a), nameOf(b)) : tb > ta ? 1 : -1;
+  }
 };
+function updatedMillis(p) {
+  return p.updatedAt && typeof p.updatedAt.toMillis === "function" ? p.updatedAt.toMillis() : -Infinity;
+}
 const view = { filter: "all", search: "", sort: "stock" }; // 지금 고른 것 - 다시 읽거나 저장해도 그대로 둔다
 
 function pickProducts(list, { filter, search, sort }) {
@@ -386,7 +395,8 @@ async function save(id, data, closeEdit, file) {
       data = { ...data, imagePath: path };
       setMessage(id, "저장 중…");
     }
-    await updateDoc(doc(db, "products", id), data);
+    // 품절 · 노출 토글, 고치기, 사진 변경 모두 여기서 저장한다 - 고친 시각(updatedAt)을 함께 적는다
+    await updateDoc(doc(db, "products", id), { ...data, updatedAt: serverTimestamp() });
     messages.set(id, "저장했습니다");
     if (closeEdit) editing = null;
     await loadProducts();
@@ -428,12 +438,13 @@ newForm.addEventListener("submit", async event => {
   newResult.textContent = "만드는 중…";
   let created;
   try {
-    created = await addDoc(collection(db, "products"), { ...data, isVisible: false, createdAt: serverTimestamp() });
+    created = await addDoc(collection(db, "products"),
+      { ...data, isVisible: false, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
     if (file) {
       const path = photoPath(created.id);
       newResult.textContent = "올리는 중 … 0%";
       await uploadPhoto(path, file, percent => { newResult.textContent = `올리는 중 … ${percent}%`; });
-      await updateDoc(created, { imagePath: path });
+      await updateDoc(created, { imagePath: path, updatedAt: serverTimestamp() });
     }
     newForm.reset();
     newForm.hidden = true;
