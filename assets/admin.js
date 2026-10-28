@@ -15,6 +15,12 @@ const loginLink = document.getElementById("ad-login");
 const grant = document.getElementById("ad-grant");
 const recheck = document.getElementById("ad-recheck");
 const result = document.getElementById("ad-result");
+const info = document.getElementById("ad-info");
+const infoEmail = document.getElementById("ad-email");
+const infoIssued = document.getElementById("ad-issued");
+const seoulTime = new Intl.DateTimeFormat("ko-KR", {
+  timeZone: "Asia/Seoul", dateStyle: "long", timeStyle: "medium"
+});
 
 let check = 0;
 async function showRole(user, refresh) {
@@ -22,15 +28,17 @@ async function showRole(user, refresh) {
   loginLink.hidden = true;
   grant.hidden = true;
   recheck.hidden = true;
+  info.hidden = true;
   if (!user) {
     state.textContent = "로그인이 필요합니다";
     loginLink.hidden = false;
     return;
   }
   state.textContent = "확인 중…";
-  let role;
+  let token, role;
   try {
-    role = (await user.getIdTokenResult(refresh)).claims.role;
+    token = await user.getIdTokenResult(refresh);
+    role = token.claims.role;
   } catch (error) {
     if (current !== check) return;
     state.textContent = "권한을 확인하지 못했습니다";
@@ -42,6 +50,9 @@ async function showRole(user, refresh) {
   recheck.hidden = false;
   if (ADMIN_ROLES.includes(role)) {
     state.textContent = `관리자: ${role}`;
+    infoEmail.textContent = user.email ?? "-";
+    infoIssued.textContent = `${seoulTime.format(new Date(token.issuedAtTime))} (서울)`;
+    info.hidden = false;
   } else {
     state.textContent = "권한이 없습니다";
     grant.hidden = false;

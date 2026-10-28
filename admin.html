@@ -13,6 +13,12 @@
     border:1px solid var(--line); border-top:4px solid #9ba078; border-radius:3px; box-shadow:3px 4px 0 #d6c6a42b; }
   .ad-panel[hidden], .ad-actions [hidden] { display:none; }
   .ad-state { margin:0 0 16px; font-size:17px; font-weight:600; overflow-wrap:anywhere; }
+  .ad-info { margin:-6px 0 16px; font-size:14px; line-height:1.7; }
+  .ad-info[hidden] { display:none; }
+  .ad-info > div { display:flex; flex-wrap:wrap; gap:0 8px; }
+  .ad-info dt { color:var(--sub); }
+  .ad-info dt::after { content:" :"; }
+  .ad-info dd { margin:0; overflow-wrap:anywhere; min-width:0; }
   .ad-actions { display:flex; flex-wrap:wrap; gap:10px; }
   .ad-actions .btn:disabled { opacity:.55; cursor:wait; }
   .ad-result { min-height:1.6em; margin:14px 0 0; font-size:13.5px; color:#9a3412; overflow-wrap:anywhere; }
@@ -50,6 +56,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <h1>관리 화면</h1>
   <section class="ad-panel" aria-live="polite">
     <p class="ad-state" id="ad-state" role="status">확인 중…</p>
+    <dl class="ad-info" id="ad-info" hidden>
+      <div><dt>로그인</dt><dd id="ad-email"></dd></div>
+      <div><dt>토큰을 받은 시각</dt><dd id="ad-issued"></dd></div>
+    </dl>
     <div class="ad-actions">
       <a class="btn" id="ad-login" href="login.html?next=admin.html" hidden>로그인</a>
       <button class="btn" id="ad-grant" type="button" hidden>주인 명찰 받기</button>
