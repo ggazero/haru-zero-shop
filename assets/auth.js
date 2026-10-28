@@ -32,7 +32,7 @@ export function subscribeAuth(listener) {
   if (ready) listener(currentUser);
   return () => listeners.delete(listener);
 }
-const RETURN_PATHS = ["mypage.html", "rules-test.html"];
+const RETURN_PATHS = ["mypage.html", "rules-test.html", "admin.html"];
 export function loginReturnPath() {
   const next = new URLSearchParams(location.search).get("next");
   return RETURN_PATHS.includes(next) ? next : null;
