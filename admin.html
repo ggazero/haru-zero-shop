@@ -22,6 +22,32 @@
   .ad-actions { display:flex; flex-wrap:wrap; gap:10px; }
   .ad-actions .btn:disabled { opacity:.55; cursor:wait; }
   .ad-result { min-height:1.6em; margin:14px 0 0; font-size:13.5px; color:#9a3412; overflow-wrap:anywhere; }
+  /* 상품 관리 */
+  .ad-products { margin-top:28px; }
+  .ad-products[hidden], .ad-new-form[hidden] { display:none; }
+  .ad-products-head { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; }
+  .ad-products-head h2 { margin:0; }
+  .ad-new-form { max-width:520px; margin:16px 0 0; }
+  .ad-new-form .ad-actions { margin-top:14px; }
+  .ad-list-status { margin:14px 0 8px; color:var(--sub); font-size:13.5px; overflow-wrap:anywhere; }
+  .ad-table-wrap { overflow-x:auto; }
+  table.ad-table { width:100%; border-collapse:collapse; background:var(--card); font-size:14px; }
+  table.ad-table th, table.ad-table td { border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:middle; }
+  table.ad-table th { background:#ede2cd; white-space:nowrap; }
+  table.ad-table td.ad-id { font-family:monospace; font-size:13px; white-space:nowrap; }
+  table.ad-table td.ad-num { text-align:right; white-space:nowrap; }
+  .ad-toggle { display:flex; align-items:center; gap:8px; white-space:nowrap; }
+  .btn.ad-small { padding:5px 12px; font-size:13px; white-space:nowrap; }
+  .btn.ad-small:disabled { opacity:.55; cursor:wait; }
+  .ad-msg { min-width:160px; font-size:13px; color:#9a3412; overflow-wrap:anywhere; }
+  .ad-edit td { background:#f8f2e4; }
+  .ad-edit-fields { display:flex; flex-wrap:wrap; gap:10px 14px; align-items:flex-end; }
+  .ad-edit-fields label, .ad-new-form label { display:flex; flex-direction:column; gap:4px; font-size:13px; color:var(--sub); }
+  .ad-edit-fields input { padding:7px 9px; border:1px solid var(--line); border-radius:3px; font:inherit; color:var(--ink); background:#fffdf7; }
+  .ad-edit-fields input[name="summary"] { width:min(320px, 70vw); }
+  .ad-edit-fields input[name="price"], .ad-edit-fields input[name="stock"] { width:110px; }
+  .ad-new-form label { margin-top:12px; }
+  .ad-new-form label:first-child { margin-top:0; }
   @media (max-width:480px) {
     .ad-panel { padding:18px; }
     .ad-actions .btn { flex:1 1 140px; text-align:center; }
@@ -66,6 +92,34 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <button class="btn ghost" id="ad-recheck" type="button" hidden>다시 확인</button>
     </div>
     <p class="ad-result" id="ad-result" role="alert"></p>
+  </section>
+
+  <!-- 상품 관리: role 이 staff / admin 일 때만 보인다 -->
+  <section class="ad-products" id="ad-products" aria-labelledby="ad-products-title" hidden>
+    <div class="ad-products-head">
+      <h2 id="ad-products-title">상품 관리</h2>
+      <button class="btn" id="ad-new" type="button">새 상품</button>
+    </div>
+    <form class="pay ad-new-form" id="ad-new-form" novalidate hidden>
+      <label>상품명<input name="name" type="text" required></label>
+      <label>가격<input name="price" type="number" min="1" step="any" inputmode="decimal" required></label>
+      <label>한 줄 소개<input name="summary" type="text"></label>
+      <label>재고<input name="stock" type="number" min="0" step="1" inputmode="numeric" required></label>
+      <div class="ad-actions">
+        <button class="btn" type="submit">만들기</button>
+        <button class="btn ghost" id="ad-new-cancel" type="button">취소</button>
+      </div>
+      <p class="ad-result" id="ad-new-result" role="alert"></p>
+    </form>
+    <p class="ad-list-status" id="ad-list-status" role="status"></p>
+    <div class="ad-table-wrap">
+      <table class="ad-table">
+        <thead>
+          <tr><th>문서 ID</th><th>상품명</th><th>가격</th><th>재고</th><th>품절</th><th>노출</th><th>고치기</th><th>결과</th></tr>
+        </thead>
+        <tbody id="ad-product-rows"></tbody>
+      </table>
+    </div>
   </section>
 </div></main>
 <footer class="site"><div class="wrap"></div></footer>

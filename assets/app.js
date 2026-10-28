@@ -195,13 +195,6 @@ async function paintList() {
   listState ={ last: list.last, reads: list.reads, mod };
   showReads(listState.reads);
   showMore(list.hasMore);
-
-  const uploader = document.querySelector("#upload-box");
-  if (uploader && !uploader.dataset.ready) {
-    uploader.dataset.ready = "1";
-    // 올리기가 끝나면 목록을 다시 읽어 그린다
-    mod.mountUploader(uploader, paintList);
-  }
 }
 
 /* --- 상품 상세 --- */
