@@ -71,10 +71,9 @@ async function placePaidOrder() {
   }
 
   // 「바로 주문」과 같은 items 모양: productId · name · price · quantity
-  const items = cart.map(i => {
-    const p = findProduct(i.id);
-    return { productId: i.id, name: p.name, price: p.price, quantity: i.qty };
-  });
+  // 이름 · 가격은 결제 화면에서 Firestore 최신 값으로 맞춰 둔 장바구니 값 (app.js 의 cartLine)
+  const items = cart.map(cartLine).filter(Boolean).map(p =>
+    ({ productId: p.id, name: p.name, price: p.price, quantity: p.qty }));
   const goodsTotal = Cart.total();
 
   try {

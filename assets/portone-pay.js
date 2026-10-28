@@ -26,9 +26,11 @@ function makePaymentId() {
 
 // 주문 이름 - 첫 상품 이름, 나머지 종류가 있으면 「외 N건」
 function makeOrderName(items) {
-  const first = findProduct(items[0].id);
-  const rest = items.length - 1;
-  return rest > 0 ? `${first.name} 외 ${rest}건` : first.name;
+  // 이름은 장바구니에 적어 둔 Firestore 값, 없으면 shop.js 값 (app.js 의 cartLine)
+  const lines = items.map(cartLine).filter(Boolean);
+  if (lines.length === 0) return SHOP.name + " 주문";
+  const rest = lines.length - 1;
+  return rest > 0 ? `${lines[0].name} 외 ${rest}건` : lines[0].name;
 }
 
 // 최종 결제 금액 - 결제 화면과 같은 shippingOf() 로 배송비·무료배송 할인까지 반영

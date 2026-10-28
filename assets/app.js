@@ -25,6 +25,18 @@ function shippingOf(goodsTotal) {
   };
 }
 
+/* --- 장바구니 한 줄의 상품 정보 ---
+   이름 · 가격은 장바구니에 함께 적어 둔 Firestore 값을 먼저 쓰고,
+   없으면(예전에 담은 p1~p6) shop.js 의 값을 쓴다. 그림 글자(emoji)는 shop.js 에만 있다.
+   이름이나 가격을 모르는 줄은 null - 화면 · 합계 · 측정에서 뺀다 */
+function cartLine(item) {
+  const local = findProduct(item.id);
+  const name = item.name ?? (local && local.name);
+  const price = typeof item.price === "number" ? item.price : local && local.price;
+  if (name === undefined || typeof price !== "number") return null;
+  return { id: item.id, name, price, emoji: local ? local.emoji : "", qty: item.qty };
+}
+
 /* --- 장바구니는 브라우저에 저장합니다 --- */
 const Cart = {
   read() {
@@ -34,16 +46,22 @@ const Cart = {
   write(items) {
     localStorage.setItem("haru_cart", JSON.stringify(items));
   },
-  add(id) {
+  // product: 상세 화면에서 읽은 상품 (Firestore 이름 · 가격을 함께 적어 둔다)
+  add(id, product) {
     const items = Cart.read();
-    const hit = items.find(i => i.id === id);
+    let hit = items.find(i => i.id === id);
     if (hit) hit.qty += 1;
-    else items.push({ id, qty: 1 });
+    else items.push(hit = { id, qty: 1 });
+    if (product && typeof product.price === "number") {
+      hit.name = product.name;
+      hit.price = product.price;
+    }
     Cart.write(items);
 
     // ▼ 여기에 「장바구니에 담았다」를 알리는 코드가 들어갑니다 (뒤 수업에서)
-     // 담은 상품의 이름과 가격을 상품 목록에서 찾아 온다
-const p = findProduct(id);
+     // 담은 상품의 이름과 가격을 장바구니에 적어 둔 값(없으면 상품 목록)에서 찾아 온다
+const p = cartLine(hit);
+if (!p) return;
 // 통로가 이미 있으면 그대로 쓰고, 없을 때만 새로 만든다
 window.dataLayer = window.dataLayer || [];
 // 앞에서 넣은 상품 값이 섞이지 않게 먼저 비운다
@@ -75,9 +93,28 @@ dataLayer.push({
   },
   total() {
     return Cart.read().reduce((sum, i) => {
-      const p = findProduct(i.id);
+      const p = cartLine(i);
       return sum + (p ? p.price * i.qty : 0);
     }, 0);
+  },
+  // 장바구니에 든 상품의 이름 · 가격을 Firestore 최신 값으로 고쳐 적는다
+  // 못 읽으면 적어 둔 값을 그대로 쓴다 (오류는 Console 에)
+  async refresh() {
+    const items = Cart.read();
+    if (items.length === 0) return;
+    try {
+      const mod = await import(PRODUCTS_MODULE);
+      const found = await Promise.all(items.map(i => mod.loadProduct(i.id)));
+      found.forEach(({ product }, n) => {
+        if (product && typeof product.price === "number") {
+          items[n].name = product.name;
+          items[n].price = product.price;
+        }
+      });
+      Cart.write(items);
+    } catch (error) {
+      console.error(error);
+    }
   }
 };
 
@@ -202,13 +239,15 @@ async function paintDetail() {
   const box = document.querySelector("#product-detail");
   if (!box) return;
 
-  const local = findProduct(qs("id"));
+  // 주소의 상품 ID 로 Firestore 문서를 바로 읽는다 (shop.js 에 없는 새 상품도)
+  // shop.js 에 같은 ID 가 있으면 긴 설명(detail)과 그림 글자(emoji)만 거기서 보탠다
+  const id = qs("id");
   let found = { product: null, reads: 0 };
   let mod;
-  if (local) {
+  if (id) {
     try {
       mod = await import(PRODUCTS_MODULE);
-      found = await mod.loadProduct(local.id);
+      found = await mod.loadProduct(id);
     } catch (error) {
       box.innerHTML = `<p class="empty">${esc(errorText(error))}</p>`;
       return;
@@ -217,17 +256,20 @@ async function paintDetail() {
   showReads(found.reads);
 
   if (!found.product) { box.innerHTML = '<p class="empty">그런 상품이 없습니다.</p>'; return; }
+  const local = findProduct(id);
   const p = { ...local, ...found.product };
+  // 긴 설명이 없으면(새 상품) 한 줄 소개를 설명으로 쓴다
+  const detail = Array.isArray(p.detail) && p.detail.length ? p.detail : [p.summary ?? ""];
 
   document.title = p.name + " — " + SHOP.name;
   box.innerHTML = `
-    <div class="thumb">${p.emoji}</div>
+    <div class="thumb">${esc(p.emoji)}</div>
     <div>
       <h1>${esc(p.name)}</h1>
       <p class="sum">${esc(p.summary)}</p>
       <div class="price">${won(p.price)}</div>
       <p class="stock">${stockText(p.stock)}</p>
-      <div class="body prose">${p.detail.map(t => `<p>${t}</p>`).join("")}</div>
+      <div class="body prose">${detail.map(t => `<p>${esc(t)}</p>`).join("")}</div>
       <button class="btn" id="add-to-cart"${p.stock > 0 ? "" : " disabled"}>장바구니에 담기</button>
       <button class="btn ghost" id="buy-now" type="button">바로 주문</button>
       <p class="order-result" id="order-result" role="status"></p>
@@ -266,7 +308,7 @@ async function paintDetail() {
   });
 
   document.querySelector("#add-to-cart").addEventListener("click", () => {
-    Cart.add(p.id);
+    Cart.add(p.id, p);
     location.href = "cart.html";
   });
 
@@ -298,15 +340,18 @@ async function paintDetail() {
 }
 
 /* --- 장바구니 --- */
-function paintCart() {
+async function paintCart() {
   const box = document.querySelector("#cart-box");
   if (!box) return;
 
-  const items = Cart.read();
-  if (items.length === 0) {
+  if (Cart.read().length === 0) {
     box.innerHTML = '<p class="empty">장바구니가 비어 있습니다.</p>';
     return;
   }
+  // 이름 · 가격을 Firestore 최신 값으로 맞춘 뒤에 그린다
+  box.innerHTML = '<p class="empty">장바구니를 확인하는 중입니다.</p>';
+  await Cart.refresh();
+  const items = Cart.read();
 
   /* 결제 화면과 같은 배송 규칙을 미리 보여 줍니다 */
   const goodsTotal = Cart.total();
@@ -316,13 +361,13 @@ function paintCart() {
     <table class="cart">
       <tr><th>상품</th><th>수량</th><th>금액</th><th></th></tr>
       ${items.map(i => {
-        const p = findProduct(i.id);
+        const p = cartLine(i);
         if (!p) return "";
         return `<tr>
-          <td>${p.emoji} ${p.name}</td>
+          <td>${esc(p.emoji)} ${esc(p.name)}</td>
           <td>${i.qty}</td>
           <td>${won(p.price * i.qty)}</td>
-          <td><button class="btn ghost drop" data-id="${p.id}">빼기</button></td>
+          <td><button class="btn ghost drop" data-id="${esc(p.id)}">빼기</button></td>
         </tr>`;
       }).join("")}
       <tr><th colspan="2" scope="row">상품 금액</th><td>${won(goodsTotal)}</td><td></td></tr>
@@ -341,9 +386,13 @@ function paintCart() {
 }
 
 /* --- 결제 --- */
-function paintCheckout() {
+async function paintCheckout() {
   const form = document.querySelector("#pay-form");
   if (!form) return;
+
+  // 제출 처리는 먼저 걸어 두고, 금액 · begin_checkout 은 Firestore 최신 값으로 맞춘 뒤에
+  form.addEventListener("submit", submitCheckout);
+  await Cart.refresh();
 
   const sum = document.querySelector("#pay-total");
   if (sum) sum.textContent = won(Cart.total());
@@ -389,51 +438,48 @@ function paintCheckout() {
       // 금액 - 장바구니 상품 합계
       value: cartTotal,
       // 장바구니에 든 상품을 하나씩 상자에 담아 목록으로 넣는다
-      items: Cart.read().map(i => {
-        const p = findProduct(i.id);
-        return { item_id: p.id, item_name: p.name, price: p.price, quantity: i.qty };
-      })
+      items: Cart.read().map(cartLine).filter(Boolean).map(p =>
+        ({ item_id: p.id, item_name: p.name, price: p.price, quantity: p.qty }))
+    }
+  });
+}
+
+// 「결제하기」 제출 - purchase 를 보내고 장바구니를 비운다 (결제창은 portone-pay.js 가 먼저 받는다)
+function submitCheckout(e) {
+  e.preventDefault();
+
+  // ▼ 여기에 「결제를 마쳤다」를 알리는 코드가 들어갑니다 (뒤 수업에서)
+
+  // 주문 번호 - 누른 시각(밀리초)에 임의 글자를 붙여 만든다
+  const orderId = "HZ" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
+
+  // 지금 주문한 상품 합계 - 상품 가격 × 수량의 합 (배송비는 들어 있지 않다)
+  const orderTotal = Cart.total();
+
+  // 통로가 이미 있으면 그대로 쓰고, 없을 때만 새로 만든다
+  window.dataLayer = window.dataLayer || [];
+  // 앞에서 넣은 상품 값이 섞이지 않게 먼저 비운다
+  dataLayer.push({ ecommerce: null });
+  // 통로 끝에 한 덩어리를 넣는다 - 넣는 순간이 태그 관리자가 듣는 순간
+  dataLayer.push({
+    // 무슨 일이 일어났나 - 계획서 이름 글자 그대로
+    event: "purchase",
+    // 같이 보내는 주문 값 묶음
+    ecommerce: {
+      // 주문 하나를 가리키는 번호 - 같은 주문이 두 번 세어지지 않게 한다
+      transaction_id: orderId,
+      // 어느 나라 돈인가
+      currency: "KRW",
+      // 금액 - 주문한 상품 합계
+      value: orderTotal,
+      // 주문한 상품을 하나씩 상자에 담아 목록으로 넣는다
+      items: Cart.read().map(cartLine).filter(Boolean).map(p =>
+        ({ item_id: p.id, item_name: p.name, price: p.price, quantity: p.qty }))
     }
   });
 
-  form.addEventListener("submit", e => {
-    e.preventDefault();
-
-    // ▼ 여기에 「결제를 마쳤다」를 알리는 코드가 들어갑니다 (뒤 수업에서)
-
-    // 주문 번호 - 누른 시각(밀리초)에 임의 글자를 붙여 만든다
-    const orderId = "HZ" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
-
-    // 지금 주문한 상품 합계 - 상품 가격 × 수량의 합 (배송비는 들어 있지 않다)
-    const orderTotal = Cart.total();
-
-    // 통로가 이미 있으면 그대로 쓰고, 없을 때만 새로 만든다
-    window.dataLayer = window.dataLayer || [];
-    // 앞에서 넣은 상품 값이 섞이지 않게 먼저 비운다
-    dataLayer.push({ ecommerce: null });
-    // 통로 끝에 한 덩어리를 넣는다 - 넣는 순간이 태그 관리자가 듣는 순간
-    dataLayer.push({
-      // 무슨 일이 일어났나 - 계획서 이름 글자 그대로
-      event: "purchase",
-      // 같이 보내는 주문 값 묶음
-      ecommerce: {
-        // 주문 하나를 가리키는 번호 - 같은 주문이 두 번 세어지지 않게 한다
-        transaction_id: orderId,
-        // 어느 나라 돈인가
-        currency: "KRW",
-        // 금액 - 주문한 상품 합계
-        value: orderTotal,
-        // 주문한 상품을 하나씩 상자에 담아 목록으로 넣는다
-        items: Cart.read().map(i => {
-          const p = findProduct(i.id);
-          return { item_id: p.id, item_name: p.name, price: p.price, quantity: i.qty };
-        })
-      }
-    });
-
-    Cart.clear();
-    location.href = "done.html";
-  });
+  Cart.clear();
+  location.href = "done.html";
 }
 
 /* --- 가게 소개·배송 안내 글 --- */
