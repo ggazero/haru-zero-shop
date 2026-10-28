@@ -3,7 +3,8 @@
    - staff / admin 이면 「관리자: role」, 그 외에는 「주인 명찰 받기」로 grantOwnerRole 을 부른다.
    - 명찰을 받은 뒤와 「다시 확인」에서는 getIdToken(true) 로 토큰을 새로 받아 다시 확인한다.
    - staff / admin 에게만 상품 관리 표를 보여 준다. 숨긴 상품까지 products 전체를 읽는다.
-     지우기 버튼은 만들지 않는다 (규칙에서도 delete 는 막혀 있다). */
+     지우기 버튼은 만들지 않는다 (규칙에서도 delete 는 막혀 있다).
+   - 사진은 Storage products/{문서 ID}/main.jpg 에 올리고, 100% 올라간 뒤에만 그 경로를 imagePath 에 저장한다. */
 import { auth, subscribeAuth } from "./auth.js";
 import {
   getFunctions, httpsCallable
@@ -11,9 +12,13 @@ import {
 import {
   getFirestore, collection, doc, getDocs, addDoc, updateDoc, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+import {
+  getStorage, ref, uploadBytesResumable, getDownloadURL
+} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-storage.js";
 
 const grantOwnerRole = httpsCallable(getFunctions(auth.app, "us-central1"), "grantOwnerRole");
 const db = getFirestore(auth.app);
+const storage = getStorage(auth.app);
 const ADMIN_ROLES = ["staff", "admin"];
 
 const state = document.getElementById("ad-state");
@@ -108,6 +113,50 @@ const toNumber = text => String(text).trim() === "" ? NaN : Number(text);
 const priceError = price => Number.isFinite(price) && price > 0 ? "" : "가격은 0보다 큰 숫자로 적어 주세요";
 const stockError = (stock, min) => Number.isInteger(stock) && stock >= min ? "" : `재고는 ${min} 이상의 정수로 적어 주세요`;
 
+/* --- 사진 --- */
+const PHOTO_MAX = 5 * 1024 * 1024; // Storage 규칙과 같게: 5MB 미만 이미지만
+// 맨 앞에 / 를 붙이지 않는다. 예: products/p1/main.jpg
+const photoPath = id => `products/${id}/main.jpg`;
+const photoError = file => !file ? ""
+  : !file.type.startsWith("image/") ? "이미지 파일만 올릴 수 있습니다"
+  : file.size >= PHOTO_MAX ? "사진은 5MB 미만이어야 합니다"
+  : "";
+
+// 고른 파일 하나를 그대로 올리고 몇 % 올라갔는지 onPercent 로 알려 준다
+function uploadPhoto(path, file, onPercent) {
+  return new Promise((resolve, reject) => {
+    const task = uploadBytesResumable(ref(storage, path), file);
+    task.on("state_changed",
+      snap => onPercent(snap.totalBytes ? Math.floor(snap.bytesTransferred / snap.totalBytes * 100) : 0),
+      reject,
+      resolve
+    );
+  });
+}
+
+// 미리보기 다운로드 URL 은 경로마다 한 번만 받는다 (사진을 새로 올리면 지운다)
+const photoUrls = new Map();
+function photoUrl(path) {
+  if (!photoUrls.has(path)) {
+    const url = getDownloadURL(ref(storage, path));
+    url.catch(() => photoUrls.delete(path));
+    photoUrls.set(path, url);
+  }
+  return photoUrls.get(path);
+}
+
+function photoCell(p) {
+  const td = cell("ad-photo");
+  if (!p.imagePath) { td.textContent = "-"; return td; }
+  const img = document.createElement("img");
+  img.className = "ad-thumb";
+  img.alt = p.name ?? p.id;
+  photoUrl(p.imagePath)
+    .then(url => { img.src = url; td.replaceChildren(img); })
+    .catch(error => { td.textContent = errorText(error); });
+  return td;
+}
+
 let products = [];
 const messages = new Map(); // 문서 ID → 그 상품 옆에 보일 결과 한 줄
 let editing = null;         // 고치는 중인 문서 ID
@@ -181,8 +230,11 @@ function productRow(p) {
   const soldOut = !(p.stock > 0);
   const visible = p.isVisible === true;
   const tr = document.createElement("tr");
+  const msg = cell("ad-msg", messages.get(p.id) ?? "");
+  msg.dataset.id = p.id;
   tr.append(
     cell("ad-id", p.id),
+    photoCell(p),
     cell("", p.name ?? "-"),
     cell("ad-num", numberText(p.price)),
     cell("ad-num", numberText(p.stock)),
@@ -194,9 +246,26 @@ function productRow(p) {
       editing = editing === p.id ? null : p.id;
       renderProducts();
     })),
-    cell("ad-msg", messages.get(p.id) ?? "")
+    msg
   );
   return tr;
+}
+
+// 표를 다시 그리지 않고 그 상품의 결과 칸만 바꾼다 (고치던 입력 칸과 고른 사진을 지키려고)
+function setMessage(id, text) {
+  messages.set(id, text);
+  const msg = [...rows.querySelectorAll(".ad-msg")].find(td => td.dataset.id === id);
+  if (msg) msg.textContent = text;
+}
+
+function photoField() {
+  const wrap = document.createElement("label");
+  const input = document.createElement("input");
+  input.name = "photo";
+  input.type = "file";
+  input.accept = "image/*";
+  wrap.append("사진 (바꿀 때만)", input);
+  return wrap;
 }
 
 function field(label, name, type, value) {
@@ -218,17 +287,19 @@ function editRow(p) {
   const price = field("가격", "price", "number", p.price);
   const summary = field("한 줄 소개", "summary", "text", p.summary);
   const stock = field("재고", "stock", "number", p.stock);
+  const photo = photoField();
   const value = wrap => wrap.querySelector("input").value;
-  fields.append(price, summary, stock,
+  fields.append(price, summary, stock, photo,
     smallButton("저장", () => {
       const data = { price: toNumber(value(price)), summary: value(summary).trim(), stock: toNumber(value(stock)) };
-      const problem = priceError(data.price) || stockError(data.stock, 0);
-      if (problem) { messages.set(p.id, problem); renderProducts(); return; }
-      save(p.id, data, true);
+      const file = photo.querySelector("input").files[0];
+      const problem = priceError(data.price) || stockError(data.stock, 0) || photoError(file);
+      if (problem) { setMessage(p.id, problem); return; }
+      save(p.id, data, true, file);
     }),
     smallButton("취소", () => { editing = null; renderProducts(); }));
   const td = cell("", fields);
-  td.colSpan = 8;
+  td.colSpan = 9;
   tr.append(td);
   return tr;
 }
@@ -244,18 +315,31 @@ function restock(p) {
 }
 
 // 고친 칸만 updateDoc 으로 저장하고, 성공하면 목록을 다시 읽는다. 실패하면 오류를 그 상품 옆에 남긴다
-async function save(id, data, closeEdit) {
-  rows.querySelectorAll("button").forEach(b => { b.disabled = true; });
-  messages.set(id, "저장 중…");
-  renderProducts();
+// 사진(file)이 있으면 먼저 products/{id}/main.jpg 에 덮어 올리고, 다 올라간 뒤에 imagePath 와 함께 저장한다.
+// 올리기가 실패하면 문서는 아무것도 바꾸지 않는다
+async function save(id, data, closeEdit, file) {
+  const controls = rows.querySelectorAll("button, input");
+  controls.forEach(c => { c.disabled = true; });
+  setMessage(id, file ? "올리는 중 … 0%" : "저장 중…");
   try {
+    if (file) {
+      const path = photoPath(id);
+      try {
+        await uploadPhoto(path, file, percent => setMessage(id, `올리는 중 … ${percent}%`));
+      } catch (error) {
+        throw new Error(`사진을 올리지 못해 저장하지 않았습니다 — ${errorText(error)}`);
+      }
+      photoUrls.delete(path);
+      data = { ...data, imagePath: path };
+      setMessage(id, "저장 중…");
+    }
     await updateDoc(doc(db, "products", id), data);
     messages.set(id, "저장했습니다");
     if (closeEdit) editing = null;
     await loadProducts();
   } catch (error) {
-    messages.set(id, errorText(error));
-    renderProducts();
+    setMessage(id, errorText(error));
+    controls.forEach(c => { c.disabled = false; });
   }
 }
 
@@ -272,6 +356,7 @@ newCancel.addEventListener("click", () => {
 });
 
 // 새 상품: 문서 ID 는 자동, 숨긴 채로(isVisible: false) 시작한다
+// 사진을 골랐으면 ① 문서 만들기 → ② 그 ID 로 사진 올리기 → ③ 다 올라간 뒤 imagePath 저장
 newForm.addEventListener("submit", async event => {
   event.preventDefault();
   const f = newForm.elements;
@@ -281,20 +366,36 @@ newForm.addEventListener("submit", async event => {
     summary: f.summary.value.trim(),
     stock: toNumber(f.stock.value)
   };
-  const problem = (data.name ? "" : "상품명을 적어 주세요") || priceError(data.price) || stockError(data.stock, 0);
+  const file = f.photo.files[0];
+  const problem = (data.name ? "" : "상품명을 적어 주세요") || priceError(data.price) || stockError(data.stock, 0)
+    || photoError(file);
   if (problem) { newResult.textContent = problem; return; }
   const submit = newForm.querySelector("button[type=submit]");
   submit.disabled = true;
   newResult.textContent = "만드는 중…";
+  let created;
   try {
-    const ref = await addDoc(collection(db, "products"), { ...data, isVisible: false, createdAt: serverTimestamp() });
+    created = await addDoc(collection(db, "products"), { ...data, isVisible: false, createdAt: serverTimestamp() });
+    if (file) {
+      const path = photoPath(created.id);
+      newResult.textContent = "올리는 중 … 0%";
+      await uploadPhoto(path, file, percent => { newResult.textContent = `올리는 중 … ${percent}%`; });
+      await updateDoc(created, { imagePath: path });
+    }
     newForm.reset();
     newForm.hidden = true;
     newResult.textContent = "";
-    messages.set(ref.id, "새 상품을 만들었습니다 (숨김)");
+    messages.set(created.id, "새 상품을 만들었습니다 (숨김)");
     await loadProducts();
   } catch (error) {
-    newResult.textContent = errorText(error);
+    // 문서는 만들어졌는데 사진에서 멈췄으면, 그 사실을 함께 알린다 (imagePath 는 비어 있다)
+    newResult.textContent = created
+      ? `상품 ${created.id} 는 만들었지만 사진을 저장하지 못했습니다 — ${errorText(error)}`
+      : errorText(error);
+    if (created) {
+      newForm.reset();
+      await loadProducts();
+    }
   } finally {
     submit.disabled = false;
   }

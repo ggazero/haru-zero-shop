@@ -41,6 +41,9 @@
   .btn.ad-small:disabled { opacity:.55; cursor:wait; }
   .ad-msg { min-width:160px; font-size:13px; color:#9a3412; overflow-wrap:anywhere; }
   .ad-edit td { background:#f8f2e4; }
+  table.ad-table td.ad-photo { width:56px; color:var(--sub); font-size:12px; overflow-wrap:anywhere; }
+  .ad-thumb { display:block; width:48px; height:48px; object-fit:cover; border:1px solid var(--line); border-radius:3px; background:#fffdf7; }
+  .ad-edit-fields input[type="file"], .ad-new-form input[type="file"] { padding:6px 0; border:0; background:none; font-size:13px; }
   .ad-edit-fields { display:flex; flex-wrap:wrap; gap:10px 14px; align-items:flex-end; }
   .ad-edit-fields label, .ad-new-form label { display:flex; flex-direction:column; gap:4px; font-size:13px; color:var(--sub); }
   .ad-edit-fields input { padding:7px 9px; border:1px solid var(--line); border-radius:3px; font:inherit; color:var(--ink); background:#fffdf7; }
@@ -105,6 +108,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <label>가격<input name="price" type="number" min="1" step="any" inputmode="decimal" required></label>
       <label>한 줄 소개<input name="summary" type="text"></label>
       <label>재고<input name="stock" type="number" min="0" step="1" inputmode="numeric" required></label>
+      <label>사진 (한 장, 5MB 미만 이미지)<input name="photo" type="file" accept="image/*"></label>
       <div class="ad-actions">
         <button class="btn" type="submit">만들기</button>
         <button class="btn ghost" id="ad-new-cancel" type="button">취소</button>
@@ -115,7 +119,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <div class="ad-table-wrap">
       <table class="ad-table">
         <thead>
-          <tr><th>문서 ID</th><th>상품명</th><th>가격</th><th>재고</th><th>품절</th><th>노출</th><th>고치기</th><th>결과</th></tr>
+          <tr><th>문서 ID</th><th>사진</th><th>상품명</th><th>가격</th><th>재고</th><th>품절</th><th>노출</th><th>고치기</th><th>결과</th></tr>
         </thead>
         <tbody id="ad-product-rows"></tbody>
       </table>
