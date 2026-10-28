@@ -48,3 +48,14 @@ test("손님이 남의 주문을 읽는다", async () => {
   const 사람 = testEnv.authenticatedContext("cust01");
   await assertFails(getDoc(doc(사람.firestore(), "orders/o1")));
 });
+
+
+test("손님이 상품 가격을 1원으로 바꾼다", async () => {
+  const 손님 = testEnv.authenticatedContext("cust01");
+  await assertFails(setDoc(doc(손님.firestore(), "products/p1"), { price: 1 }, { merge: true }));
+});
+
+test("손님이 주문하며 상품 재고를 하나 줄인다", async () => {
+  const 손님 = testEnv.authenticatedContext("cust01");
+  await assertSucceeds(setDoc(doc(손님.firestore(), "products/p1"), { stock: 9 }, { merge: true }));
+});
