@@ -230,3 +230,4 @@ exports.askShopBot = onCall({region: "us-central1", secrets: [geminiApiKey]}, as
 });
 Object.assign(exports, require("./automation"));
 Object.assign(exports, require("./admin"));
+Object.assign(exports, require("./account"));
