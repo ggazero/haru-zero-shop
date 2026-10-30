@@ -82,6 +82,18 @@
   .ad-dialog dt { color:var(--sub); }
   .ad-dialog dt::after { content:" :"; }
   .ad-dialog dd { margin:0; font-weight:600; font-family:monospace; overflow-wrap:anywhere; }
+  /* 매출 */
+  .ad-sales-basis { margin:16px 0 0; padding:10px 12px; font-size:14px; line-height:1.7; background:#f8f2e4;
+    border:1px solid var(--line); border-left:4px solid #9ba078; border-radius:3px; overflow-wrap:anywhere; }
+  .ad-sales-basis[hidden], .ad-sales-chart[hidden] { display:none; }
+  .ad-sales-basis p { margin:0; }
+  .ad-sales-basis p + p { margin-top:4px; color:var(--sub); }
+  .ad-sales-chart { position:relative; width:100%; height:280px; margin:14px 0 16px; padding:12px; box-sizing:border-box;
+    background:var(--card); border:1px solid var(--line); border-radius:3px; }
+  table.ad-table td.ad-sales-none { color:var(--sub); }
+  @media (max-width:480px) {
+    .ad-sales-chart { height:220px; padding:8px; }
+  }
   @media (max-width:480px) {
     .ad-panel { padding:18px; }
     .ad-actions .btn { flex:1 1 140px; text-align:center; }
@@ -132,6 +144,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <div class="ad-tabs" id="ad-tabs" role="tablist" aria-label="관리 메뉴" hidden>
     <button class="ad-tab" id="ad-tab-products-btn" type="button" role="tab" aria-controls="ad-tab-products" aria-selected="true">상품 관리</button>
     <button class="ad-tab" id="ad-tab-orders-btn" type="button" role="tab" aria-controls="ad-tab-orders" aria-selected="false" tabindex="-1">주문</button>
+    <button class="ad-tab" id="ad-tab-sales-btn" type="button" role="tab" aria-controls="ad-tab-sales" aria-selected="false" tabindex="-1">매출</button>
   </div>
 
   <div class="ad-tabpanel" id="ad-tab-products" role="tabpanel" aria-labelledby="ad-tab-products-btn">
@@ -261,6 +274,30 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </dialog>
   </section>
   </div>
+
+  <!-- 매출: dailyStats 만 읽는다 (orders 는 읽지 않는다) -->
+  <div class="ad-tabpanel" id="ad-tab-sales" role="tabpanel" aria-labelledby="ad-tab-sales-btn" hidden>
+  <section class="ad-products" id="ad-sales" aria-labelledby="ad-sales-title">
+    <div class="ad-products-head">
+      <h2 id="ad-sales-title">최근 7일 매출</h2>
+      <button class="btn ghost ad-small" id="ad-sales-reload" type="button">새로 읽기</button>
+    </div>
+    <div class="ad-sales-basis" id="ad-sales-basis" hidden>
+      <p><span id="ad-sales-basis-day"></span>까지의 매출입니다.<br>매일 00:05에 전날을 셉니다.</p>
+      <p>마지막으로 센 시각 : <span id="ad-sales-counted"></span></p>
+    </div>
+    <p class="ad-list-status" id="ad-sales-status" role="status"></p>
+    <div class="ad-sales-chart" id="ad-sales-chart-box">
+      <canvas id="ad-sales-chart" role="img" aria-label="최근 7일 날짜별 매출 막대 차트. 같은 내용이 아래 표에 있습니다."></canvas>
+    </div>
+    <div class="ad-table-wrap">
+      <table class="ad-table">
+        <thead><tr id="ad-sales-head"></tr></thead>
+        <tbody id="ad-sales-rows"></tbody>
+      </table>
+    </div>
+  </section>
+  </div>
 </div></main>
 <footer class="site"><div class="wrap"></div></footer>
 <script src="assets/shop.js"></script>
@@ -268,5 +305,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script type="module" src="assets/auth-ui.js"></script>
 <script type="module" src="assets/admin.js"></script>
 <script type="module" src="assets/admin-orders.js"></script>
+<!-- 매출 차트 도구: Chart.js 4.4.1 (MIT) - 버전을 고정한 주소 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script type="module" src="assets/admin-sales.js"></script>
 </body>
 </html>
