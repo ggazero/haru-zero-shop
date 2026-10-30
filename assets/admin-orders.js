@@ -152,13 +152,29 @@ function infoRow(label, value) {
   return div;
 }
 
+// 주문 상품 한 줄. items 모양은 두 가지다
+//  - 화면에서 만든 주문(바로 주문 · 장바구니 결제): { productId, name, price, quantity } — price 는 한 개 값
+//  - 결제 웹훅이 만든 주문(functions createOrder): { id, qty } — 이름 · 가격이 없다
+// 없는 값은 지어내지 않는다: 이름이 없으면 상품 ID 를, 둘 다 없으면 「상품 정보 없음」을 보인다
+function itemText(i) {
+  if (!i || typeof i !== "object") return String(i);
+  const id = i.productId ?? i.id;
+  const name = typeof i.name === "string" && i.name.trim() ? i.name
+    : id !== undefined && id !== null && id !== "" ? `상품 ID ${id}` : "상품 정보 없음";
+  const qty = i.quantity ?? i.qty;
+  const qtyText = typeof qty === "number" ? ` × ${qty.toLocaleString("ko-KR")}개` : " (수량 정보 없음)";
+  const priceText = typeof i.price !== "number" ? ""
+    : ` (${qty === 1 ? "" : "개당 "}${i.price.toLocaleString("ko-KR")}원)`;
+  return name + qtyText + priceText;
+}
+
 function itemsList(items) {
   if (!Array.isArray(items)) return JSON.stringify(items);
   const ul = document.createElement("ul");
   ul.className = "ad-order-items";
   ul.append(...items.map(i => {
     const li = document.createElement("li");
-    li.textContent = i && typeof i === "object" ? `${i.id ?? "-"} × ${i.qty ?? "-"}` : String(i);
+    li.textContent = itemText(i);
     return li;
   }));
   return ul;
@@ -166,16 +182,18 @@ function itemsList(items) {
 
 function renderDetail(id, data) {
   detailTitle.textContent = `주문 ${id}`;
-  const has = key => Object.hasOwn(data, key) && data[key] !== undefined;
+  // 값이 없는(undefined · null · 빈 글자) 항목은 줄을 만들지 않는다
+  const has = key => Object.hasOwn(data, key) && data[key] !== undefined && data[key] !== null && data[key] !== "";
   const fields = [];
-  if (has("items")) fields.push(infoRow("items", itemsList(data.items)));
-  if (has("totalPrice")) fields.push(infoRow("totalPrice", priceText(data.totalPrice)));
-  if (has("status")) fields.push(infoRow("status", String(data.status)));
-  if (has("receivedAt")) fields.push(infoRow("receivedAt", timeText(data.receivedAt) ?? String(data.receivedAt)));
-  if (has("processStatus")) fields.push(infoRow("processStatus", String(data.processStatus)));
-  if (has("processError")) fields.push(infoRow("processError", String(data.processError)));
-  if (has("mailStatus")) fields.push(infoRow("mailStatus", String(data.mailStatus)));
-  if (has("statusUpdatedAt")) fields.push(infoRow("statusUpdatedAt", timeText(data.statusUpdatedAt) ?? String(data.statusUpdatedAt)));
+  // 화면에 보이는 이름만 한국어. Firestore 필드명은 그대로 읽는다
+  if (has("items")) fields.push(infoRow("주문 상품", itemsList(data.items)));
+  if (has("totalPrice")) fields.push(infoRow("주문 금액", priceText(data.totalPrice)));
+  if (has("status")) fields.push(infoRow("주문 상태", String(data.status)));
+  if (has("receivedAt")) fields.push(infoRow("주문 접수 시각", timeText(data.receivedAt) ?? String(data.receivedAt)));
+  if (has("processStatus")) fields.push(infoRow("처리 상태", String(data.processStatus)));
+  if (has("processError")) fields.push(infoRow("처리 오류", String(data.processError)));
+  if (has("mailStatus")) fields.push(infoRow("메일 발송 상태", String(data.mailStatus)));
+  if (has("statusUpdatedAt")) fields.push(infoRow("상태 변경 시각", timeText(data.statusUpdatedAt) ?? String(data.statusUpdatedAt)));
   detailInfo.replaceChildren(...fields);
   detailInfo.hidden = fields.length === 0;
 
