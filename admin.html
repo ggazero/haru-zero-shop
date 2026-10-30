@@ -91,6 +91,8 @@
   .ad-sales-chart { position:relative; width:100%; height:280px; margin:14px 0 16px; padding:12px; box-sizing:border-box;
     background:var(--card); border:1px solid var(--line); border-radius:3px; }
   table.ad-table td.ad-sales-none { color:var(--sub); }
+  .ad-sales-sum { margin:0 0 14px; font-size:15px; font-weight:600; overflow-wrap:anywhere; }
+  .ad-sales-sum:empty { display:none; }
   @media (max-width:480px) {
     .ad-sales-chart { height:220px; padding:8px; }
   }
@@ -290,6 +292,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <div class="ad-sales-chart" id="ad-sales-chart-box">
       <canvas id="ad-sales-chart" role="img" aria-label="최근 7일 날짜별 매출 막대 차트. 같은 내용이 아래 표에 있습니다."></canvas>
     </div>
+    <p class="ad-sales-sum" id="ad-sales-sum"></p>
     <div class="ad-table-wrap">
       <table class="ad-table">
         <thead><tr id="ad-sales-head"></tr></thead>

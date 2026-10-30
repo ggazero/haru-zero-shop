@@ -40,6 +40,19 @@ export function recentDays(now = new Date(), days = DAYS) {
   return list;
 }
 
+// 최근 7일 합계 한 줄. 이미 읽은 rows 만 쓴다 (Firestore 를 더 읽지 않는다)
+// 문서가 없는 날(stats: null)은 빼고 더한다. 문서가 있고 0원인 날은 그대로 더한다
+export function sumLine(rows) {
+  let sales = 0, orders = 0, missing = 0;
+  for (const r of rows) {
+    if (!r.stats) { missing++; continue; }
+    if (typeof r.stats.totalSales === "number") sales += r.stats.totalSales;
+    if (typeof r.stats.orderCount === "number") orders += r.stats.orderCount;
+  }
+  const note = missing ? `(집계 없는 날 ${missing}일은 빼고 더함)` : "(집계 없는 날 없음)";
+  return `최근 ${rows.length}일 합계 ${sales.toLocaleString("ko-KR")}원 - 주문 ${orders.toLocaleString("ko-KR")}건 ${note}`;
+}
+
 const won = n => `${n.toLocaleString("ko-KR")}원`;
 const numberOrDash = (value, unit) => typeof value === "number" ? `${value.toLocaleString("ko-KR")}${unit}` : "-";
 const timeText = value => value && typeof value.toDate === "function" ? `${seoulTime.format(value.toDate())} (서울)` : "-";
@@ -52,6 +65,7 @@ const basisDay = document.getElementById("ad-sales-basis-day");
 const lastCounted = document.getElementById("ad-sales-counted");
 const canvas = document.getElementById("ad-sales-chart");
 const chartBox = document.getElementById("ad-sales-chart-box");
+const sumText = document.getElementById("ad-sales-sum");
 const salesHead = document.getElementById("ad-sales-head");
 const salesRows = document.getElementById("ad-sales-rows");
 const reload = document.getElementById("ad-sales-reload");
@@ -95,6 +109,7 @@ function render(rows) {
     basis.hidden = true;
     statusLine.textContent = `최근 ${DAYS}일의 집계 문서가 없습니다.`;
   }
+  sumText.textContent = sumLine(rows);
   renderTable(rows);
   renderChart(rows);
 }
@@ -193,6 +208,7 @@ function clear(clearStatus = true) {
   if (chart) { chart.destroy(); chart = null; }
   basis.hidden = true;
   basisDay.textContent = "";
+  sumText.textContent = "";
   lastCounted.textContent = "";
   salesHead.replaceChildren();
   salesRows.replaceChildren();
