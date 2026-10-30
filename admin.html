@@ -69,6 +69,19 @@
   .ad-edit-fields input[name="price"], .ad-edit-fields input[name="stock"] { width:110px; }
   .ad-new-form label { margin-top:12px; }
   .ad-new-form label:first-child { margin-top:0; }
+  /* 탭 · 주문 */
+  .ad-tabs { display:flex; flex-wrap:wrap; gap:6px; margin-top:28px; border-bottom:1px solid var(--line); }
+  .ad-tabs[hidden], .ad-tabpanel[hidden], .ad-order-more[hidden] { display:none; }
+  .ad-tab { padding:8px 16px; border:1px solid var(--line); border-bottom:0; border-radius:3px 3px 0 0;
+    font:inherit; font-size:14px; color:var(--sub); background:#f8f2e4; cursor:pointer; }
+  .ad-tab[aria-selected="true"] { color:var(--ink); font-weight:600; background:var(--card); }
+  .ad-order-more { margin-top:12px; }
+  .ad-order-items { margin:0; padding-left:18px; }
+  .ad-dialog dl { margin:0 0 18px; font-size:15px; }
+  .ad-dialog dl > div { display:flex; flex-wrap:wrap; gap:0 8px; }
+  .ad-dialog dt { color:var(--sub); }
+  .ad-dialog dt::after { content:" :"; }
+  .ad-dialog dd { margin:0; font-weight:600; font-family:monospace; overflow-wrap:anywhere; }
   @media (max-width:480px) {
     .ad-panel { padding:18px; }
     .ad-actions .btn { flex:1 1 140px; text-align:center; }
@@ -115,6 +128,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <p class="ad-result" id="ad-result" role="alert"></p>
   </section>
 
+  <!-- 탭: 상품 관리가 보일 때(staff / admin)만 admin-orders.js 가 보여 준다 -->
+  <div class="ad-tabs" id="ad-tabs" role="tablist" aria-label="관리 메뉴" hidden>
+    <button class="ad-tab" id="ad-tab-products-btn" type="button" role="tab" aria-controls="ad-tab-products" aria-selected="true">상품 관리</button>
+    <button class="ad-tab" id="ad-tab-orders-btn" type="button" role="tab" aria-controls="ad-tab-orders" aria-selected="false" tabindex="-1">주문</button>
+  </div>
+
+  <div class="ad-tabpanel" id="ad-tab-products" role="tabpanel" aria-labelledby="ad-tab-products-btn">
   <!-- 상품 관리: role 이 staff / admin 일 때만 보인다 -->
   <section class="ad-products" id="ad-products" aria-labelledby="ad-products-title" hidden>
     <div class="ad-products-head">
@@ -189,11 +209,64 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       </table>
     </div>
   </section>
+  </div>
+
+  <!-- 주문: orders 를 읽고, 상태를 한 단계씩만 바꾼다 (취소 버튼 없음) -->
+  <div class="ad-tabpanel" id="ad-tab-orders" role="tabpanel" aria-labelledby="ad-tab-orders-btn" hidden>
+  <section class="ad-products" id="ad-orders" aria-labelledby="ad-orders-title">
+    <div class="ad-products-head">
+      <h2 id="ad-orders-title">주문</h2>
+    </div>
+    <div class="ad-tools">
+      <div class="ad-filters" role="group" aria-label="주문 상태 거르기">
+        <button class="btn ghost ad-small" type="button" data-status="all" aria-pressed="true">전체</button>
+        <button class="btn ghost ad-small" type="button" data-status="paid" aria-pressed="false">paid</button>
+        <button class="btn ghost ad-small" type="button" data-status="preparing" aria-pressed="false">preparing</button>
+        <button class="btn ghost ad-small" type="button" data-status="shipped" aria-pressed="false">shipped</button>
+        <button class="btn ghost ad-small" type="button" data-status="delivered" aria-pressed="false">delivered</button>
+        <button class="btn ghost ad-small" type="button" data-status="canceled" aria-pressed="false">canceled</button>
+      </div>
+    </div>
+    <p class="ad-list-status" id="ad-order-status" role="status"></p>
+    <div class="ad-table-wrap">
+      <table class="ad-table">
+        <thead>
+          <tr><th>주문 ID</th><th>totalPrice</th><th>status</th><th>createdAt</th><th>상세</th></tr>
+        </thead>
+        <tbody id="ad-order-rows"></tbody>
+      </table>
+    </div>
+    <button class="btn ghost ad-order-more" id="ad-order-more" type="button" hidden>더 보기</button>
+
+    <section class="ad-panel" id="ad-order-detail" aria-labelledby="ad-order-detail-title" hidden>
+      <h3 class="ad-state" id="ad-order-detail-title"></h3>
+      <dl class="ad-info" id="ad-order-detail-info" hidden></dl>
+      <div class="ad-actions" id="ad-order-detail-actions"></div>
+      <p class="ad-result" id="ad-order-detail-result" role="status"></p>
+    </section>
+
+    <!-- 상태 바꾸기 확인: 주문 ID 와 상태는 스크립트가 글자로만 넣는다 -->
+    <dialog class="ad-dialog" id="ad-order-confirm" aria-labelledby="ad-order-confirm-text">
+      <form method="dialog">
+        <p id="ad-order-confirm-text">주문 상태를 바꿉니다</p>
+        <dl>
+          <div><dt>주문 ID</dt><dd id="ad-order-confirm-id"></dd></div>
+          <div><dt>변경할 상태</dt><dd id="ad-order-confirm-to"></dd></div>
+        </dl>
+        <div class="ad-actions">
+          <button class="btn" type="submit" value="confirm">바꾸기</button>
+          <button class="btn ghost" type="submit" value="cancel" autofocus>그만두기</button>
+        </div>
+      </form>
+    </dialog>
+  </section>
+  </div>
 </div></main>
 <footer class="site"><div class="wrap"></div></footer>
 <script src="assets/shop.js"></script>
 <script src="assets/app.js"></script>
 <script type="module" src="assets/auth-ui.js"></script>
 <script type="module" src="assets/admin.js"></script>
+<script type="module" src="assets/admin-orders.js"></script>
 </body>
 </html>
